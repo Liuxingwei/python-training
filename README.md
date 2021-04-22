@@ -1,6 +1,32 @@
 # PYTHON 速览
 
-## 前言 Hello, World!
+## 凡例
+
+代码有三类：
+
+一类为 python 文件，在代码前有文件名，文件均可在当前文件夹内找到。
+
+一类为 python 交互脚本，形如：
+
+```python
+>>> a = 3 + 2
+>>> print(a)
+5
+```
+其中 >>> 后面是输入的脚本，无 >>> 前缀的是脚本的输出
+
+一类为 shell 脚本，形如：
+
+```shell
+$ python -c "import huhuhu"
+Traceback (most recent call last):
+  File "<string>", line 1, in <module>
+ModuleNotFoundError: No module named 'huhuhu'
+```
+
+其中，$ 后面是输入的命令，无 $ 前缀的是命令的输出
+
+## 零、Hello, World!
 
 编写 hello.py 文件，内容：
 
@@ -14,13 +40,13 @@ print(string)
 在命令行输入命令：
 
 ```shell
-$python hello.py
+$ python hello.py
 ```
 
 输出结果：
 
 ```shell
-$Hello, world!
+Hello, world!
 ```
 
 1. 脚本语言，无需经过单独的编译步骤，直接通过解释器命令执行
@@ -30,6 +56,8 @@ $Hello, world!
 5. 语句块以冒号、缩进为标志，不使用大括号；缩进只要宽度一致即可，推荐以四个空格为单位
 6. #!/usr/bin/env python 在linux下，可以在将文件设置为可运行时，直接运行文件，将调用系统环境的python运行本文件代码
 7. #encoding:utf8 指明文件编码，python3下默认为utf8，如果文件为utf8编码，可不写
+8. 注释以 # 开头
+9. 区分大小写
 
 ## 一、安装
 
@@ -60,7 +88,7 @@ anacoda 升级：
     2. Visual Studio Code
         1. Terminal
         2. Jupyter Terminal: interactive window
-    
+
 ## 四、虚拟环境
 
 1. 虚拟环境：从系统 Python 环境衍生，并与其他（包括系统） Python 环境隔离的 Python 运行环境
@@ -69,7 +97,7 @@ anacoda 升级：
 ### 创建虚拟环境
 
 ```shell
-$python -m venv --system-site-package /path/to/new/virtual/environment
+$ python -m venv --system-site-package /path/to/new/virtual/environment
 ```
 
 --system-site-package 参数的作用是允许虚拟环境访问原始环境的库。虚拟环境的安装命令将包安装在虚拟环境中。在 Import 包时的优先级顺序为 当前路径、虚拟环境包路径、原始环境包路径。
@@ -78,7 +106,7 @@ $python -m venv --system-site-package /path/to/new/virtual/environment
 
 命令行激活： 
 ```shell
-$/path/to/new/virtual/environment/bin/activate
+$ /path/to/new/virtual/environment/bin/activate
 ```
 
 ### 迁移环境
@@ -86,19 +114,19 @@ $/path/to/new/virtual/environment/bin/activate
 1. 导出包列表：
 
 ```shell
-$pip freeze --local > requirements.txt
+$ pip freeze --local > requirements.txt
 ```
 
 2. 下载包（新环境不能上网时需此步骤）：
 
 ```shell
-$pip download -r requirements.txt
+$ pip download -r requirements.txt
 ```
 
 3. 创建新环境
 
 ```shell
-$python -m venv --system-site-package /path/to/new/virtual/environment
+$ python -m venv --system-site-package /path/to/new/virtual/environment
 ```
 
 4. 安装包
@@ -106,11 +134,11 @@ $python -m venv --system-site-package /path/to/new/virtual/environment
 ```shell
 # 如果可以上网，复制requirements.txt
 
-$pip install -r requirements.txt
+$ pip install -r requirements.txt
 
 # 如果不能上网，复制下载的安装文件和requirements.txt，在安装文件所在文件夹执行
 
-$pip install --no-index --find-index=. -r requirements.txt 
+$ pip install --no-index --find-index=. -r requirements.txt 
 ```
 
 ### 在 IDE 中选用虚拟环境
@@ -120,23 +148,133 @@ $pip install --no-index --find-index=. -r requirements.txt
 
 ## 五、数据类型及相关运算符、表达式
 
+0. 一切皆为对象
+
+    因此，**变量均为引用**
+
 1. 整数类型
 
-//（整除）、%（求余）、\*\*（乘方），函数：int()、divmod()...，没有自增、自减，仅有增强，赋值（+=、*=）
+    //（整除）、%（求余）、\*\*（乘方）、有增强型赋值（+=、*=）...
+
+    没有自增、自减，
+
+    函数：
+
+    int(param)： 创建一个值为 param 的整数对象
+
+    divmod()：返回一个由整除的商和余数构成的元组
+
+...
+
 
 2. 布尔类型
 
-True(1) False(0) bool()函数
+    True(1) False(0) 
+
+    == 相等判断
+
+    函数：
+
+    bool(param)：创建一个 bool 对象，参数为整数、浮点数，则等于0时为假值，否则为真值；参数为字符串，空串为假值，否则为真值；其它对象，则调用对象的__bool__()方法
 
 3. 浮点数
 
-支持整除、求余，float()
+    支持整除、求余
 
-decimal类，精确数字，decimal.Decimal()，参数必须是整数或字符串，不能是浮点数
+    函数：
+
+    float(param)：创建一个值为 param 的浮点数对象
+
+    decimal类，精确数字，decimal.Decimal(param)，参数必须是整数或字符串，不能是浮点数
 
 4. 字符串
 
+    1. 定界符
 
+        定界符有长短之分，短格式定界符为单引号或双引号
+
+        长格式定界符为三分号（单双均可）,长格式字符串可以换行
+
+    2. 转义
+
+        \ 为转义字符串标志
+
+    3. 原始字符串
+
+        在字符串常量前缀 r 即为原始字符串，其中的 \ 不再是转义标志
+
+            r'abc\n3'
+
+    4. 字符串连接
+
+        字符串连接运算符 +
+
+        连续的多个字符串常量自动连接
+
+    5. 字符串序列
+
+        1. 不可变
+
+        2. 长度
+
+            len(str)函数
+
+        3. 索引
+
+            使用数字索引获取指定位置的字符。
+
+            从前向后数，第一个元素的索引为 0，最后一个的索引为 len(str) - 1。
+
+            从后向前数，最后一个元素的索引为-1，第一个元素的索引为 - len(str)。
+
+        4. 切片
+
+            分号分割的两个索引，分别为切片的起始索引（包含在切片中）和切片后余下元素的第一个元素的索引（不包含在切片中），如果要切到最后一个，则第二个索引可以为len(str)
+
+                >>> 'hello'[2:4]
+                'll'
+                >>> 'hello'[2:5]
+                'llo'
+
+            可以使用负数索引。
+
+            只能从前向后截，即后一个索引必须位于前一索引之后，否则即为容串
+
+                >>> 'hello'[-3:0]
+                ''
+
+            可以省略，省略第一个索引，则从第一个元素开始切片，相当于索引 0 或 -len(str)；如果省略第二个索引，则一直切到最后一个元素，相当于 len(str)。
+
+            如果两个索引都省略，即可复制字符串。
+        
+        5. 乘法
+
+            字符串可以与整数相乘，以得到重复多次的字符串
+
+        6. in
+
+            in 运算符，用于判断一个字符串是否在包含在另一个字符串中。
+
+                >>> 'a' in 'abc'
+                True
+                >>> 'bc' in 'abcd'
+                True
+                >>> 'bc' in 'abcd'
+                False
+
+        7. max()、min()
+
+            获取字符串中最大的字符：max(string)
+
+            获取字符串中最小的字符：min(string)
+
+        8. str(param)
+
+            创建值为param的字符串。
+
+        9. 格式化（变量置换）
+
+            
 
 ## 六、元组、列表、字典
 
