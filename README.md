@@ -126,10 +126,17 @@ $pip install --no-index --find-index=. -r requirements.txt
 
 2. 布尔类型
 
-
+True(1) False(0) bool()函数
 
 3. 浮点数
+
+支持整除、求余，float()
+
+decimal类，精确数字，decimal.Decimal()，参数必须是整数或字符串，不能是浮点数
+
 4. 字符串
+
+
 
 ## 六、元组、列表、字典
 
