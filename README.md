@@ -262,19 +262,179 @@ $ pip install --no-index --find-index=. -r requirements.txt
                 >>> 'bc' in 'abcd'
                 False
 
-        7. max()、min()
+        7. 解包
+
+            实用意义不大，需注意字符串是可以解包的，可能会引发非期望的结果
+
+        8. max()、min()
 
             获取字符串中最大的字符：max(string)
 
             获取字符串中最小的字符：min(string)
 
-        8. str(param)
+        9. str(param)
 
             创建值为param的字符串。
 
-        9. 格式化（变量置换）
+        10. 格式化（变量置换）
 
-            
+            1. 旧式语法：
+
+                与 C 语言的格式化输出语法类似，使用 % 作为点位符和运算符
+                    name = "张三"
+                    age = 32
+                    height = 1.83
+                    "姓名：%10s；年龄：%3i；身高：%4.2f" % (name, age, height)
+
+            2. format() 函数
+
+                原字符串使用{}做占位符（如需在字符串中使用花括号，使用连续的两个花括号 {{ 和 }} ），调用字符串对象的format()函数，完成变量置换
+
+                第一种，使用位置参数的位置序号点位
+
+                    name = "张三"
+                    age = 32
+                    height = 1.83
+                    "姓名：{2}；年龄：{1}；身高：{0}".format(height, age, name)
+
+                第二种，使用关键字参数的键点位
+
+                    name = "张三"
+                    age = 32
+                    height = 1.83
+                    "姓名：{a}；年龄：{b}；身高：{c}".format(b=age, a=name, c=height)
+                
+                以上两种方式，参数均可重复使用
+
+                第三种，无占位标志
+
+                    name = "张三"
+                    age = 32
+                    height = 1.83
+                    "姓名：{}；年龄：{}；身高：{}".format(name, age, height)
+
+                第三种方式，仅按参数默认顺序，且不能重复使用参数
+
+                如果参数是对象，还可以引用其属性；如果参数是序列或字典，还可以通过索引引用其元素。
+
+                    import math
+                    "{.pi}".format(math)
+                    "{0[2]}".format((1, 3, 9))
+                    "name[1]".format(name="古天乐")
+
+                格式指令：格式指令在占位标志之后，与占位标志以冒号分隔，无占位标志时直接以冒号开始，由八部分构成，依顺序依次是：
+                
+                1. 填充字符：
+
+                    在指定了宽度时，如果给定的值长度不足，用于填补空缺的字符，默认为空
+
+                2. 对齐标志：
+
+                    < 左对齐，左侧用填充字符补齐
+
+                    \> 右对齐，右侧用填充字符补齐
+
+                    ^ 居中，两侧用填充字符补齐
+
+                    = 符号和数字间用填充字符补齐
+
+                3. 符号标志：
+
+                    - 表示如果为负数，前导符号为负号
+
+                    + 表示如果为负数，前导符号为负号，如果为正数或 0，前导符号为正号
+
+                    空格 表示如果为负数，前导符号为负号，如果为正数或 0,前导符号为空格
+
+                4. 进制标志：
+
+                    \# 对于二进制、八进制、十六进制的整数，指定#号将显示进制标志
+
+                5. 宽度：整数，指定数值所占宽度
+
+                6. 千位分隔标志：
+
+                    逗号：整数部分超过三位的十进制数值，将为整数部分添加千位分隔符（逗号）
+
+                7. 小数部分的精度：
+                
+                    .n：一个句点带一个整数，用于指定十进制浮点数的小数部分精度
+
+                8. 转换标志：
+
+                    !b|o|d|x|X|e|E|f|F|g|n|G|%|s
+
+            一个两次format的示例，string_format.py：
+
+                width = int(input('Please enter width: '))
+
+                fruits = [
+                    ['Apples', 0.4],
+                    ['Pears', 0.5],
+                    ['Cantaloupes', 1.92],
+                    ['Dired Apricots (16 oz.)', 8],
+                    ['Prunes (4 lbs.)', 12]
+                ]
+
+                price_width = 10
+                item_width = width - price_width
+
+                header_fmt = '{{:{}}}{{:>{}}}'.format(item_width, price_width)
+                fmt = '{{0[0]:{}}}{{0[1]:>{}.2f}}'.format(item_width, price_width)
+
+                print('=' * width)
+
+                print(header_fmt.format('Item', 'Price'))
+
+                print('-' * width)
+
+                for fruit in fruits:
+                    print(fmt.format(fruit))
+
+                print('=' * width)
+
+        11. 字符串的常用方法
+
+            | 方法 | 描述 |
+            |:----|:----|
+            | s.capitalize() | 返回字符串s首字母大写的副本 |
+            | s.center(width, char="") | 字符串占据 width 宽度，两侧以 char 填充，默认为空格|
+            | s.count(t[, start[, end]]) | 返回字符串 s （或其切片）中，字符串 t 出现的次数 |
+            | s.encode(encoding, err='strict') | 返回指定编码的 bytes 对象，可选参数用于指定超出指定字符集的字符的处理方式 |
+            | s.endswith(x[, start[, end]]) | 如果字符串 s （或其分片）以指定字符串结尾，返回 True |
+            | s.expendtabs(size) | 返回字符串 s 的副本，其中的制表符使用指定数量的空格替换 | 
+            | s.find(t[, start[, end]]) | 返回字符串 s （或其分片）中，字符串 t 首次出现的位置（自左侧搜索），如果没找到，返回 -1 |
+            | s.format(...) | 见字符串格式化 |
+            | s.index(t[, start[, end]]) | 返回字符串 s （或其分片）中，字符串 t 首次出现的位置（自左侧搜索），如果没找到，抛出 ValueError 异常 |
+            | s.isalnum() | 判断字符串 s 是否全部由字母数字组成 |
+            | s.isalpha() | 判断字符串 s 是否全部由字母组成 |
+            | s.isdecimal() | 判断字符串 s 是否全部由 Unicode数字，全角数字（双字节） 组成 |
+            | s.isdigit() | 判断字符串 s 是否全部由 Unicode数字，全角数字（双字节） 组成 |
+            | s.isidentifier() | 判断字符串 s 是否为有效标识 |
+            | s.islower() | 如果字符串 s 中至少有一个小写字符，并且所有可小写的字符均为小写，返回 True |
+            | s.isnumeric() | 判断字符串 s 是否全部由 Unicode数字，全角数字（双字节），罗马数字，汉字数字 组成|
+            | s.isprintable() | 判断字符串 s 是否全部由可打印字符组成 |
+            | s.isspace() | 判断字符串 s 是否全部由空白字符组成 |
+            | s.istitle() | 判断字符串 s 是否全部由首字母大写的单词组成 |
+            | s.isupper() | 如果字符串 s 中至少有一个大写字符，并且所有可大写的字符均为大写，返回 True |
+            | s.join(sql) | 以字符串 s 作为分隔符，将 seq 中所有项合并为一个新的字符串 |
+            | s.ljust(width, char='') | 返回一个原字符串左对齐，并使用字符 char 填充至长度 width 的新字符串 |
+            | s.lower() | 返回字符串 s 中所有可小写字母小写的结果 |
+            | s.ltrip(char='') | 返回截掉 s 开头处被包含在字符串 char 中的字符的结果 |
+            | s.partition(t) | 从字符串 t 出现的第一个位置起,把字符串 s 分成一个3元素的元组 (string_pre_str,str,string_post_str),如果 string 中不包含str 则 string_pre_str == string |
+            | s.replace(t, u, n) | 把字符串 s 中的 字符串 t 替换成字符串 u，如果指定了 n，则最多替换 n 次 |
+            | s.rfind(t[, start[, end]]) | 类似于 s.find() ，返回字符串 s （或其分片）中，字符串 t 首次出现的位置（自右侧搜索），如果没找到，返回 -1 |
+            | s.rindex(t[, start[, end]]) | 返回字符串 s （或其分片）中，字符串 t 首次出现的位置（自右侧搜索），如果没找到，抛出 ValueError 异常 |
+            | s.rjust(width, char='') | 返回一个原字符串右对齐，并使用字符 char 填充至长度 width 的新字符串 |
+            | s.rpartition(t) | 从字符串 t 出现的最后一个位置起，把字符串 s 分成一个3元素的元组 (string_post_str,str,string_pre_str),如果 string 中不包含str 则 string_pre_str == string |
+            | s.rstrip(tchar='') | 返回截掉 s 结尾处被包含在字符串 char 中的字符的结果 |
+            | s.split(t, n) | 以字符串 s 为分割符，分割字符串 t，如果 s 为空，则以空白为分割符，如果指定了 n，则最多分割 n 次 |
+            | s.splitlines(f=False) | 以行终结符为分割符，分割字符串 s，如果参数为 True，保留行终结符，如果参数 False，删除行终结符 |
+            | s.startswith(x[, start[, end]]) | 如果字符串 s （或其分片）以指定字符串开头，返回 True |
+            | s.swapcase() | 返回将字符串 s 中的字符翻转大小写的结果 |
+            | s.title() | 返回的字符串 s 中所有单词都是以大写开始，其余字母均为小写的结果 |
+            | s.upper() | 返回字符串 s 中所有可大写字母大写的结果 |
+            | s.zfill(w) | 返回长度为 w 的字符串，原字符串 string 右对齐，前面填充0
 
 ## 六、元组、列表、字典
 

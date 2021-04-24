@@ -1,4 +1,4 @@
 #!/usr/bin/env python
 #encoding:utf8
-string = "Hello, world!"
+string = "Hello, World!"
 print(string)
