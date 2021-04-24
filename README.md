@@ -187,7 +187,13 @@ $ pip install --no-index --find-index=. -r requirements.txt
 
     decimal类，精确数字，decimal.Decimal(param)，参数必须是整数或字符串，不能是浮点数
 
-4. 字符串
+
+## 六、列表、元组、字符串、字典
+
+1. 序列
+    1. 列表
+    2. 元组
+2. 字符串
 
     1. 定界符
 
@@ -436,12 +442,7 @@ $ pip install --no-index --find-index=. -r requirements.txt
             | s.upper() | 返回字符串 s 中所有可大写字母大写的结果 |
             | s.zfill(w) | 返回长度为 w 的字符串，原字符串 string 右对齐，前面填充0
 
-## 六、元组、列表、字典
-
-1. 序列
-    1. 元组
-    2. 列表
-2. 字典
+3. 字典
 
 ## 七、流程控制
 
