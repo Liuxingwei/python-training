@@ -196,7 +196,7 @@ $ pip install --no-index --find-index=. -r requirements.txt
 
     1. 元组
 
-        元组相当于不可变数组。python 的很多函数都会返回元组。
+        元组（`tuple`）相当于不可变数组。python 的很多函数都会返回元组。
 
         元组的定义有两种方法，其一为使用 tuple(seq) 方法，它会将 seq 置换为元组，seq 参数必须是一个序列。
 
@@ -206,7 +206,11 @@ $ pip install --no-index --find-index=. -r requirements.txt
 
             seq = (1, 2, 3, 4, 5)
 
+            seq = tuple((1, 2))
+
             seq = ()
+
+            seq = tuple()
 
             seq = (4,) #注意它与 seq = (4) 的区别
 
@@ -325,7 +329,29 @@ $ pip install --no-index --find-index=. -r requirements.txt
             | l.count(param) | 计算 param 在序列 l 中出现的次数 |
             | l.index(x[, start[, end]]) | 返回 x 在序列 l （或其切片）中最左边出现的索引值，如果 x 不存在，抛出 ValueError 异常 |
 
-    2. 列表
+    2. 命名元组
+
+        命名元组不是内置类型，是由 `collections` 模块实现的。其特殊是可以根据名称引用元组的项。
+
+        命名元组先要用如下方法定义：
+
+            import collections
+            People = collections.namedtuple('MyTuple', 'name sex age')
+
+        其中第一个参数是自定义元组数据类型的标志，第二个参数是用空白间隔的元组元素名称列表。此方法的返回值，即为一个命名元组。
+
+        定义了命名元组之后，就可以使用它定义命名元组变量了：
+
+            tina = People('lixue', 'male', 18)
+
+        命名元组元素的读取方法有两种，作为 `tuple` 类的子类，可以像元组一样使用索引引用，还可以象访问对象属性的一样：
+
+            >>> tina[0]
+            'lixue'
+            >>> tina.name
+            'lixue' 
+
+    3. 列表
 
         列表类似于可变数组。
 
@@ -640,8 +666,11 @@ $ pip install --no-index --find-index=. -r requirements.txt
             | s.upper() | 返回字符串 s 中所有可大写字母大写的结果 |
             | s.zfill(w) | 返回长度为 w 的字符串，原字符串 string 右对齐，前面填充0
 
-3. 集合
-4. 字典
+3. 字典
+
+    字典
+
+4. 集合
 
 ## 七、流程控制
 
@@ -688,29 +717,31 @@ $ pip install --no-index --find-index=. -r requirements.txt
 5. 模块查找
 6. 自定义模块
 
-## 十二、调试和测试
+## 十二、常用模块
+
+1. 日期和时间
+2. XML
+3. JSON
+4. 邮件
+5. 网络编程
+6. Web
+7. 数据库
+8. 正则表达式
+## 十三、调试和测试
 
 1. 断点调试
 2. 单元测试
-
-## 十三、进程、线程、协程
+## 十四、进程、线程、协程
 
 1. 进程
 2. 线程
 3. 协程
 
-## 十四、程序打包
+## 十五、程序打包
 
 1. Setuptools
 2. 打包
 3. py2exe 和 py2app
-
-## 十五、其它
-
-1. 网络编程
-2. Web
-3. 数据库
-4. 正则表达式
 
 ## 十六、应用
 
