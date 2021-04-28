@@ -198,7 +198,7 @@ $ pip install --no-index --find-index=. -r requirements.txt
 
         元组（`tuple`）相当于不可变数组。python 的很多函数都会返回元组。
 
-        元组的定义有两种方法，其一为使用 tuple(seq) 方法，它会将 seq 置换为元组，seq 参数必须是一个序列。
+        元组的定义有两种方法，其一为使用 `tuple([seq])` 方法，它会将 seq 置换为元组，seq 参数必须是一个序列，如果不提供参数，则创建一个空元组。
 
         另一个定义方法是字面量，用逗号间隔的值，就构成了元组。一些情况下，需要在元组的外面加上括号：比如 空元组、使用元组做函数参数、允许使用逗主但实际是想使用元组的情况、以及仅包含一个元素的元组。对于只包含一个元素的元组，还需要在唯一元素的后面加逗号，这是为了区别加了括号的值，因为 (45) 和 45 是一样的。
 
@@ -355,7 +355,7 @@ $ pip install --no-index --find-index=. -r requirements.txt
 
         列表类似于可变数组。
 
-        定义有两种方法，其一为使用 `list(seq)` 方法，它会将 seq 置换为元组，seq 参数必须是一个序列。
+        定义有两种方法，其一为使用 `list([seq])` 方法，它会将 seq 置换为元组，seq 参数必须是一个序列，如果不提供参数，则创建空列表。
 
         另一个定义方法是字面量，用空方括号或方括号内逗号间隔值，就构成了列表。
 
@@ -410,6 +410,7 @@ $ pip install --no-index --find-index=. -r requirements.txt
         | 方法 | 描述 | 
         |----|----|
         | l.append(param) | 将 param 追加到列表 l 末尾 |
+        | l.clear() | 清空列表 |
         | l.extend(m) | 将 m 逐项添加到 l 的末尾 |
         | l.insert(i, x) | 在索引位置 i 处将数据项 x 插入列表 l |
         | l.pop(i = (len(l) - 1)) | 返回并移除列表索引位置 i 的元素 |
@@ -668,10 +669,172 @@ $ pip install --no-index --find-index=. -r requirements.txt
 
 3. 字典
 
-    字典
+    字典是映射类型，即键值对。
 
-4. 集合
+    定义列表有两种方法，一是使用 `dict([param])` 方法，一种是使用字面量。
 
+    先简后繁，先说字面量。字典字面量是用 `{}`，空的花括号定义了空的字典，非空字典语法如下：
+
+        {key1: value1, key2: value2....}
+
+    不可变类型均可用做字典的键：int、float、str、tuple等等。
+
+    字典的值可以为任意类型。
+
+    需要注意的是，不带有键值对格式的花括号是定义集合（set）的。
+
+    使用 `dict([param])` 语法，参数形式比较多：
+
+    1. 不带参数
+
+        创建空字典。
+
+        dict()
+
+    2. 映射类型
+
+        映射类型的参数，直接返回以该参数为基础的字典。
+
+            dict({"id": 1948, "name": "Washer", "size": 3})
+
+    3. 嵌套序列
+
+        序列的每个元素都是由两个值的序列组成的，其中的第一个值被用作键，第二个值被用作值。
+
+            dict([("id", 1948), ("name", "Washer"), ("size", 3))])
+
+    4. 命名参数
+
+        参数名用途键，参数值用途值。
+
+            dict(id=1948, name="Washer", size=3)
+
+    字典的常用操作：
+
+    1. 获取字典的长度：
+
+            >>> len({"k1": "v1", "k2": "v2"})
+            2
+
+    2. 获取指定键的值：
+
+            >>> d = {"k1": "v1", "k2": "v2"}
+            >>> d["k1"]
+            'v1'
+
+    3. 给指定的键赋值：
+
+            >>> d = {"k1": "v1", "k2": "v2"}
+            >>> d["k2"] = 30
+            >>> d["k2"]
+            30
+
+        还可以通过给不存在的键赋值，来为字典添加元素：
+
+            >>> d["k3"] = {1, 2, 3}
+            >>> d
+            {'k1': 'v1', 'k2': 30, 'k3': {1, 2, 3}}
+
+    4. 删除指定键
+
+            >>> d = {"k1": "v1", "k2": "v2"}
+            >>> del d["k2"]
+            >>> d
+            {'k1': 'v1'}
+
+    5. 判断指定键是否存在
+
+        注意这一运算与列表的不同。
+
+            >>> d = {"k1": "v1", "k2": "v2"}
+            >>> "k1" in d
+            True
+            >>> "v2" in d
+            False
+
+    6. 字典与字符串格式化方法：`format_map(d)`
+
+        使用字符串的 `format_map(d)` 方法，并传递给它一个字典作为参数，可以用字典中存在的键作为字符串中的占位符。
+
+            >>> phonebook = {'Jason': '8425', 'David': '7833', 'Ketty': '9622'}
+            >>> "Jason's phone number is {Jason}.".format_map(phonebook)
+
+    字典方法
+
+    | 方法 | 描述 |
+    |----|----|
+    | d.clear() | 清空字典 d |
+    | d.copy() | 生成字典 d 的浅拷贝 |
+    | d.fromkeys(key[, value]) | 生成一个新字典，如果参数 p 是序列类型，则用 p 的值做键，如果提供了第二个参数，则以第二个参数作为所有键的值，否则，所有键的值均为 None；如果参数 p 是字典，则用 p 的键做键，如果提供了第二个参数，则以第二个参数作为所有键的值，否则，所有键的值均为 None |
+    | d.get(key[, default]) | 获取键 key 的值。与 d[key] 的不同是，在键 key 不存在时，d.get(key) 方法返回 None（或者在提供了第二个套数时，返回第二个参数的值），而 d[key] 则会抛出异常。 |
+    | d.items() | 返回字典 d 所有键值对构成的视图，视图的值类似于列表，其每个成员都是一个由键、值构成的元组 `{'title': 'Python Web Site', 'url': 'http://www.python.org', 'spam': 0}.items()` 的结果是 `dict_items([('url', 'http://www.python.org'), ('spam', 0), ('title', 'Python Web Site')])` |
+    | d.keys() | 返回一个由字典的键组成的视图 |
+    | d.pop(key) | 返回指定键的值，并从字典中删除键值对 |
+    | d.popitem() | 随机返回一个键值对，并从字典中删除它。返回结果为键和值构成的元组 |
+    | d.setdefault(key, default) | 获取 key 的值，如果 key 不存在，则在字典中插入 key，其值为 default |
+    | d.update(param) | 使用与 dict 相同的规则，将参数 param 转化为字典，使用该字典更新字典 d，向 d 中插入不存在的键值对，更新已存在的键值对，不改变 param 中不存在的键值对。 |
+    | d.values() | 返回字典 d 中所有值的视图 |
+
+    关于字典视图：
+
+    `d.items()`、`d.items()` 和 `d.items()` 方法返回的都是字典的视图，它们的特点是本身不可改变，但会随字典的变化而变化。
+
+        >>> d = {'title': 'Python Web Site', 'url': 'http://www.python.org', 'spam': 0} 4 >>> d.items()
+        dict_items([('url', 'http://www.python.org'), ('spam', 0), ('title', 'Python Web Site')])
+        >>> d['spam'] = 1
+        >>> ('spam', 0) in it 
+        False
+        >>> d['spam'] = 0
+        >>> ('spam', 0) in it 
+        True
+
+4. 集合（set）
+
+    集合是 0 个或多个对象引用的无序组合，其元素必须是可哈希的（有 __hash__() 方法）。所有内置的不可变数据类型都是可哈希的，如 int、float、str、tuple、namedtuple、frozenset 等；内置可变数据类型是不可哈希的，如 dict、list、set等。
+
+    集合的初始化：
+    使用 `set([param])` 函数，不带参数创建空集合，带一个 `set` 类型的参数，创建一个 `set` 的浅拷贝，其它类型的参数，则尝试将给定的参数转换为集合。
+    非空集合也可以使用花括号定义，直接将用逗号间隔的元素放入一对花括号即可。**不能用空花括号定义空集合**，空花括号是定义空字典的。花括号内的元素可以是不同的类型，但不能包含键值对。
+
+    集合不包含重复元素，向集合内添加已有元素不报错，但也没有意义。集合的这一特性可以用来去重。
+
+    集合无序，不能像列表、元组一样用索引引用其元素。集合无键，也不能像字典一样，使用键引用其元素。
+
+    可以迭代集合，但其顺序不可依赖。
+
+    如果一定要使用索引引用集合，可以利用 `list(s)` 函数将其转换为列表。
+
+    集合的常用操作：
+
+    1. 长度：`len(x)`
+    2. 判断一个元素是否在集合中：`x in s`
+    3. 并集： `s | t`
+    4. 差集：`s - t`
+    5. 比较：`s == t`、`s != t`、`s > t`、`s >= t`、`s < t`、`s <= t`
+    6. 交集：`s & t`
+    7. 并集与交集的差：`s ^ t`
+
+    集合的方法：
+
+    | 方法 | 描述 |
+    |----|----|
+    | s.add(x) | 如果 s 中不存在 x，将 x 添加到 s 中 |
+    | s.clear() | 清空集合 s |
+    | s.copy() | 返回集合的浅拷贝 |
+    | s.difference(t) | s - t |
+    | s.dirrerenct_update(t) | s -= t |
+    | s.discard(x) | 如果 x 存在于 s 中，就移除 x，如果没有，也不报异常 |
+    | s.intersection(t) | s & t |
+    | s.intersection_update(t) | s &= t|
+    | s.isdisjoint(t) | 如果 s 和 t 没有相同的项，返回 True |
+    | s.issubset(t) | s <= t |
+    | s.issuperset(t) | s >= t |
+    | s.pop() | 返回并移除一个随机元素，如果是空集，抛出 KeyError 异常 |
+    | s.remove(x) | 如果 x 存在于 s 中，就移除 x，如果没有，抛出 KeyError 异常 |
+    | s.symmetric_difference(t) | s ^ t |
+    | s.symmetric_difference_update(t) | s ^= t |
+    | s.union(t) | s | t |
+    | s.update(t) | s |= t |
 ## 七、流程控制
 
 1. 分支
