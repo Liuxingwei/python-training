@@ -314,11 +314,13 @@ $ pip install --no-index --find-index=. -r requirements.txt
                 >>> ininstance(y, list)
                 True
 
-        9. max(seq)、min(seq)
+        9. max(seq, key=None)、min(seq, key=None)
 
-            获取序列中值最大的元素：max(seq)
+            获取序列中值最大的元素： `max(seq, key=None)`，`key` 参数接受一个函数，如果提供了 `key` 参数，则对序列中的每个元素调用 `key` 指向的函数，返回 `key(item)` 值最大的元素。
 
-            获取序列中值最小的元素：min(seq)
+            获取序列中值最小的元素：`min(seq, key=None)`，`key` 参数接受一个函数，如果提供了 `key` 参数，则对序列中的每个元素调用 `key` 指向的函数，返回 `key(item)` 值最小的元素。
+
+
 
         10. 元组的方法
 
@@ -837,10 +839,231 @@ $ pip install --no-index --find-index=. -r requirements.txt
     | s.update(t) | s |= t |
 ## 七、流程控制
 
-1. 分支
-2. 循环
-3. 简单推导
-4. 异常
+1. 输入输出
+
+    1. `input([prompt])`
+
+        `input`函数接受键盘输入并返回输入的字符串（不包含回车）。函数的参数将作为提示信息显示在控制台上。
+
+    2. `print(*params, sep=' ', end='\r')`
+
+        `print`方法可以接受用逗号间隔的多个参数，这些参数类型可以不一致，输出时以 `sep` 参数指定的字符进行间隔，默认间隔符为空格。还可以指定结束符，默认为换行。
+
+2. pass
+
+    `pass` 是空语句，相当于类 C 语言的 ;
+
+    `pass` 通常用于占位
+
+3. 分支
+
+    if boolean_expression1:
+        suite1
+    elif boolean_expression2:
+        suite2
+    ...
+    elif boolean_expressionN: 
+        suiteN
+    else: 
+        else_suite
+
+    关于分支，只说三点和其他语言的不同：
+
+    1. 条件表达式不需要括号
+    2. 语句块用冒号和缩进标记，不使用花括号
+    3. 其它语言的 else if 写作 elif
+
+4. 迭代（循环）
+
+    1. while
+
+            while boolean_express:
+                suite1
+            else: 
+                suite2
+
+        可选的 `else` 子句在没有 `break` 的循环结束时执行。
+    2. for
+
+            for var in iterable:
+                suite1
+            else:
+                suite2
+
+        对于 `for` 语句中的 `var`，通常指的是迭代对象的元素，**但在迭代字典时，略有不同，其值为字典的键**：
+
+            >>> d = 1{'key1`: 'val1', 'key2': 'val2'}
+            >>> for key in d:
+            >>>    print(key, d[key], sep='=')
+            key1=val1
+            key2=val2
+
+    3. break 和 continue
+
+    4. 迭代工具函数
+
+        1. `range(start, stop[, step])` 和 `range(stop)`
+
+            `range` 函数生成可迭代的整数序列。
+
+            `range(start, stop[, step])` 语法，是以 `start` 开始（包含 `start`），至 `stop` 结束（不包含 `stop`），`step` 为步长，步长默认为 `1`。步长可以为负值。
+
+                >>> for i in range(0, 10):
+                >>>    print(i, end=' ')
+                0 1 2 3 4 5 6 7 8 9
+                >>> for i in range(9, -1, -1):
+                >>>    print(i, end=' ')
+                9 8 7 6 5 4 3 2 1 0
+
+            `range(stop)` 语法，以 `0` 为 `start`，步长为 `1`。
+
+                >>> for i in range(10):
+                >>>    print(i, end=' ')
+                0 1 2 3 4 5 6 7 8 9
+
+        2. 并行迭代
+
+            `zip(...)` 函新将多个序列缝合成一个新序列，新序列的每个元素是一个由各序列相同序号的值构成的元组。
+
+                >>> names = ['anne', 'beth', 'george', 'damon']
+                >>> ages = [12, 45, 32, 102]
+                >>> sexs = ['male', 'female', 'female', 'male']
+                >>> for name, age, sex in zip(names, ages, sexes):
+                >>>    print(name, age, sex)
+                'anne' 12 'male'
+                'beth' 45 'female'
+                'george' 32 'female'
+                'damon' 102 'male'
+
+        3. 迭代时获取索引
+
+            `enumerate(seq)` 函数返回一个新序列，由 `seq` 的索引和值组成的元组构成。
+
+                >>> for index, name in enumerate(names):
+                >>>    print(i, name)
+                0 'anne'
+                1 'beth'
+                2 'george'
+                3 'damon'
+
+        4. 反向迭代
+
+            `reversed(seq)` 返回一个倒序的新序列
+
+        5. 排序后迭代
+
+            `sorted(seq, key=None)` 函数返回一个排序后的新序列，如果指定了 `key`，则对每个元素调用 `key` 函数，并对结果进行排序。
+
+5. 简单推导
+
+    1. 列表推导：
+
+        `[valueexpression for val1, val2... in iterable]`
+
+        相当于：
+
+            temp = []
+            for val1, val2 in iterable:
+                temp.append(valueexpression)
+
+        并返回 `temp`。
+
+        `[valueexpression for val1, val2... in iterable if condition]`
+
+        相当于：
+
+            temp = []
+            for val1, val2 in iterable:
+                if condition:
+                    temp.append(valueexpression)
+
+        并返回 `temp`。
+
+    2. 集合推导：
+
+        {valueexpression for val1, val2... in iterable if condition}
+
+    3. 字典推导：
+
+        {keyexpression:valueexpression for val1, val2... in iterable if condition}
+
+6. 异常
+
+    1. 捕获异常
+
+            try: 
+                suite
+            except exception_group1 as variable1:
+                except_suite1
+            ...
+            except exception_groupN as variableN:
+                except_suite2
+            else:
+                else_suite
+            finally:
+                finally_suite
+
+        `exception_group`：在一个 `except` 中可以捕获一种异常，也可以捕获多种异常，如果捕获多种异常，则需将用逗号分隔的多个异常类型放在括号中。
+
+        `else` 子句在异常没有发生时执行。
+        
+    2. 追踪异常
+
+        可以直接打印异常变量：
+
+            try:
+                ...
+            except ValueError as e:
+                print(e)
+
+        这和打印 `e.message()` 是一样的。
+
+        如果要打印整个异常栈，则需要使用 `trackback` 模块或 `logging` 模块：
+
+            import trackback
+
+            try:
+                ...
+            except IndexError as e:
+                print(trackback.print_exc())
+
+        或者
+            
+            import logging
+            try:
+                ...
+            except IndexError as e:
+                logging.exception(e)
+
+    3. 抛出异常和异常传播
+
+        可以使用 `raise` 语句抛出异常，有几种语法：
+
+            raise exception
+
+        这种语法仅使用异常类名作为表达式，输出标准异常信息
+
+            raise exception(strs)
+
+        这种语法的参数格式类似于 `print(strs)`，除了输出标准异常信息，还会输出参数中的文本信息
+
+            raise
+
+        这种语法一般用在捕获异常后又抛出的情况，可以直接抛出捕获到的异常
+
+        前面三种语法，如果用在 `except` 子句中，则抛出的异常将作为新抛出异常的**上下文**,存储在异常堆栈中。
+
+        如下语法可以提供自己的上下文：
+
+            raise exception(strs) from original_exception
+
+        如果 `original_exception` 的值为 `None`，则禁用上下文 。
+
+    4. 自定义异常
+
+        `python` 的自定义异常极其简单：
+
+            class exceptionName(baseException): pass
 
 ## 八、函数
 
