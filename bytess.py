@@ -1,2 +1,5 @@
-[3,4].sort()
-{}.fromkeys()
+a = 5
+if a == 3:
+    a;
+range()
+zip()
