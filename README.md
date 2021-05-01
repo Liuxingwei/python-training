@@ -292,7 +292,7 @@ $ pip install --no-index --find-index=. -r requirements.txt
 
             序列解包时，需要左侧的变量数据与序列的元素数量一致，否则会出错
 
-        8. 收集运算符 *
+        8. 收集和解包 *
 
             在将序列赋给多个变量时，序列个数多于变量个数，在最后一个变量前加 *，剩余的序列元素将以元组的形式赋给最后一个变量，最后一个变量的类型与序列的类型一致
 
@@ -313,6 +313,13 @@ $ pip install --no-index --find-index=. -r requirements.txt
                 False
                 >>> ininstance(y, list)
                 True
+
+            * 号在某些情况下，还有解包的作用：
+
+                >>> t1 = (3, 4)
+                >>> t2 = (1, 2, *t1, 5, 6)
+                >>> print(t2)
+                (1, 2, 3, 4, 5, 6)
 
         9. max(seq, key=None)、min(seq, key=None)
 
@@ -754,7 +761,16 @@ $ pip install --no-index --find-index=. -r requirements.txt
             >>> "v2" in d
             False
 
-    6. 字典与字符串格式化方法：`format_map(d)`
+    6. 字典解包 **
+
+        字典解包的作用类似于序列解包，示例如下：
+
+            >>> d1 = {'sex': '女', 'length': 1.72}
+            >>> d2 = {'name': '花木梅', **d1, 'weight': 100}
+            >>> print(d2)
+            {'name': '花木梅', 'sex': '女', 'length': 1.72, 'weight': 100}
+   
+    7. 字典与字符串格式化方法：`format_map(d)`
 
         使用字符串的 `format_map(d)` 方法，并传递给它一个字典作为参数，可以用字典中存在的键作为字符串中的占位符。
 
@@ -857,21 +873,27 @@ $ pip install --no-index --find-index=. -r requirements.txt
 
 3. 分支
 
-    if boolean_expression1:
-        suite1
-    elif boolean_expression2:
-        suite2
-    ...
-    elif boolean_expressionN: 
-        suiteN
-    else: 
-        else_suite
+        if boolean_expression1:
+            suite1
+        elif boolean_expression2:
+            suite2
+        ...
+        elif boolean_expressionN: 
+            suiteN
+        else: 
+            else_suite
 
     关于分支，只说三点和其他语言的不同：
 
     1. 条件表达式不需要括号
     2. 语句块用冒号和缩进标记，不使用花括号
     3. 其它语言的 else if 写作 elif
+
+    **条件表达式：** 对于语句部分仅有一个表达式的两分支语句，可以缩减为单一的条件表达式：
+
+        expression1 if condition else expression2
+
+    在条件为 `True` 时条件表达式的结果为 `expression1`，相反则为 `expression2`。
 
 4. 迭代（循环）
 
@@ -1065,16 +1087,227 @@ $ pip install --no-index --find-index=. -r requirements.txt
 
             class exceptionName(baseException): pass
 
-## 八、函数
+## 八、自定义函数
 
 1. 基本格式
-2. 位置参数和关键字参数
-3. 收集参数和分配参数
-4. lambda表达式
-5. doc
-6. 嵌套函数与闭包
-7. 修饰器
 
+        def functionName(paramters):
+            suite
+
+2. 位置参数和关键字参数
+
+    `python` 中的变量均为对象引用，函数参数也是引用传递。
+
+    在调用函数时，可以像其他语言一样，只提供参数值，但这时候，参数的顺序将极为重要：
+
+        >>> def func(param1, param2):
+        >>>    return param1 - param2
+        >>> func(3, 2)
+        1
+        >>> func(2, 3)
+        -1
+
+    但 `python` 还提供了另一种调用方法，即在调用时指定参数名，这种方式的参数叫**关键字参数**，关键字参数可以无视顺序，这在参数较多，或参数易混淆时，非常有用：
+
+        >>> def func(param1, param2):
+        >>>    return param1 - param2
+        >>> func(param1=3, param2=2)
+        1
+        >>> func(param2=2, param1=3)
+        1
+
+    参数可以有默认值，对于有默认值的参数，调用时可以不提供。在定义带有默认值参数的函数时，不能将无默认值的参数定义在有默认值参数之后。
+
+    调用函数时，也可以混合使用位置参数和关键字参数，顺序上依然要位置参数在前，关键字参数在后。无论如何，无默认值的参数一定要提供。
+
+    以上两点，为 `python` 的函数定义和调用，提供了极大的灵活性：
+
+        >>> def hello_4(name, greeting='Hello', punctuation='!'):
+        >>>    print('{}, {}{}'.format(greeting, name, punctuation))
+        >>> hello_4('Mars') 
+        Hello, Mars!
+        >>> hello_4('Mars', 'Howdy')
+        Howdy, Mars!
+        >>> hello_4('Mars', 'Howdy', '...')
+        Howdy, Mars...
+        >>> hello_4('Mars', punctuation='.')
+        Hello, Mars.
+        >>> hello_4(punctuation='.', name='Mars')
+        Hello, Mars.
+        >>> hello_4(greeting='Top of the morning to ya', punctuation='.', name='Mars')
+        Top of the morning to ya, Mars.
+
+3. 收集参数
+
+    收集参数有两类
+    
+    1. 位置参数收集，可以理解为在定义函数时指定了一个元组类型的参数，而在调用时提供逗号间隔的位置参数列表，列表中的值依顺序成为元组参数的元素，语法：
+
+            def funcationName(*parameters):
+                suite
+
+        简单示例：
+
+            >>> def print_param(*params):
+            >>>    print(params)
+            >>> print_param('hello', 'butty')
+            ('hello', 'butty')
+            >>> print_param('hello')
+            ('hello',)
+
+    2. 关键字参数收集，可以理解为定义函数时指了一个字典类型的参数，而在调用时提供了逗号间隔的关键字参数列表，列表中的项将成为字典参数的元素，语法：
+
+            def funcationName(**keyParameters):
+                suite
+
+        简单示例：
+
+            >>> def collection_dict_params(**dict_parameters):
+            >>>     print(dict_paramters)
+            >>> collection_dict_params(name='野比大雄', sex='男')
+            {'name': '野比大雄', 'sex': '男'}
+
+    还可以混合使用位置参数收集和关键字参数收集，位置参数收集在前，关键字参数收集在后：
+
+        def functionName(*params, **keyParameters):
+            suite
+
+    最复杂的形式是命名参数和收集参数混合使用的情况，顺序上可以是如下两种形式之一：
+
+        def functionName(param1, param2, ..., paramN, *params, key1=value1, key2=value2, ..., keyN=valueN, **keyParameters):
+            suite
+
+        def functionName(param1, param2, ..., paramN, *params, key1=value1, key2=value2, ..., keyN=valueN, **keyParameters):
+            suite
+
+    例如，`print` 函数的签名即为：
+
+        print(*value, sep=' ', end='\n', file=sys.stdout, flush=False)
+
+4. 分配参数
+
+    分配参数是指在调用函数时，使用 `*` 和 `**` 运算符。
+
+    如果使用 `*` 后接一个序列的形式作为实参调用函数，则序列会被解包成参数列表。
+
+        >>> def func(a, b, c):
+        >>>     print(a, b, c)
+        >>> n = 3, 4, 5
+        >>> func(*n)
+        3 4 5
+
+    `**` 在函数调用中的使用与此类似，只是实参类型换成了字典，
+
+        >>> def func(a, b, c):
+        >>>     print(a, b, c)
+        >>> n = {'a': 3, 'b': 4, 'c': 5}
+        >>> func(**n)
+        3 4 5
+
+5. 返回值
+
+    函数使用 `return` 语句返回值。形式上可以返回多个值，不过实际上返回多值的结果即为元组。利用序列解包的特性，可以直接将返回多值的函数调用赋值给多个变量。
+
+        >>> def func(a, b, c):
+        ...     return a + a, b * b, c ** c
+        ...
+        >>> print(func(1, 2, 3))
+        (2, 4, 27)
+        >>> m, n, p = func(1, 2, 3)
+        >>> print(m, n, p)
+        2 4 27
+
+6. lambda表达式
+
+    `python` 的 `lambda` 表达式较之其它语言要更简单，适用范围也更窄：
+
+        lambda paramters: expression
+
+    参数可选，支持普通函数参数的全部形式。
+
+    表达式不能含有分支和循环，可以有条件表达式和推导式。不能含有 `return` 语句，不能是生成器。
+
+    调用结果是一个匿名函数，对匿名函数的调用将返回 `expression` 的计算结果，如果 `expression` 是一个元组字面量，需要使用括号包含起来。
+
+7. doc
+
+    `python` 中为函数或类撰写文档很容易，只要在函数或类的第一行内容写下一串字符串即可。这样的字符串被称为**文档字符串**（docstring）。
+
+        def square(x):
+            '计算数字 x 的平方'
+            return x * x
+    
+    可以通过函数的 `__doc__` 属性访问文档字符串：
+
+        >>> square.__doc__
+        '计算数字 x 的平方'
+
+    如果文档字符串较长，且有多行（比如包含使用示例等），可以使用三引号语法。此类文档，通常第一行为概述，换两行，再详细对函数加以说明。
+
+8. 函数是一等公民
+
+    面向对象语言中，一等公民指对象。在 `python`、`javascript` 等动态语言中，函数也是对象。可以将函数赋给变量，然后就可以像函数一样使用变量（类似于 `C` 语言的函数指针）：
+
+        >>> def square(x):
+        ...    '计算数字 x 的平方'
+        ...    return x * x
+        ...
+        >>> func = square
+        >>> func(3)
+        9
+        >>> func.__doc__
+        '计算数字 x 的平方'
+
+9.  嵌套函数（局部函数）与闭包
+
+    嵌套函数是指在一个函数内部定义的函数，由于作用域的缘故，也被称为局部函数、本地函数。
+
+    局部函数可以访问其外部作用域（外部函数的作用域）内的变量。默认情况下，外部作用域对局部函数是只读的，如果要改变外部作用域的变量，可以使用 `nonlocal` 关键字对外部作用域变量加以说明。
+
+    局部函数的一大用途就是闭包：闭包是指一个能访问其外部作用域的对象（或称为持有其外部环境的对象），在函数式编程语言中，一般是用返回局部函数的方式实现：
+
+        >>> def external_func(param):
+        ...    a = 3
+        ...    b = 4
+        ...    def internal_func():
+        ...        print(a)
+        ...        print(param)
+        ...        nonlocal b
+        ...        b += 9
+        ...        return b
+        ...    return internal_func
+        ...
+        >>> i = external_func('try')
+        >>> i()
+        3
+        'try'
+        13
+
+    局部函数的另外一个常见的用途是局部代码的递归。
+
+10. 修饰器
+
+    修饰器是一个函数，将被修饰的函数（或方法）作为其唯一的参数，返回一个新的函数（或方法），新函数（或方法）是对被修饰函数（或方法）的包装。在被修饰方法前使用 `@` 符号引导修饰器方法，则在调用被修饰方法时， `python` 将按如下顺序完成调用：
+    
+    1. 先调用修饰器方法，得到其返回的包装方法，
+    2. 再以调用被修饰方法的参数，调用返回的包装方法。 
+
+    包装器的实际实现，是闭包、函数参数收集、分配参数的综合运用：
+
+        def positive_result(function):
+            '此包装器实现了在被修饰函数结果为正数时正常返回，为负数时抛出异常的功能'
+            def wrapper(*args, **keyargs):
+                result = function(*args, **keyargs)
+                assert result >= 0, function.__name__ + "() result isn't >= 0"
+                return result
+            wrapper.__name__ = function.__name__
+            wrapper.__doc__ = function.__doc__
+            return wrapper
+
+        @positive_result
+        def discriminant(a, b, c):
+            '完成对二次项系数为a，一次项系数为b，常数项为c的一元二次方程判别式的计算'
+            return (b ** 2) - (4 * a * c)
 ## 九、类与对象
 
 1. 类、属性、方法
