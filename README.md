@@ -1292,7 +1292,7 @@ $ pip install --no-index --find-index=. -r requirements.txt
     1. 先调用修饰器方法，得到其返回的包装方法，
     2. 再以调用被修饰方法的参数，调用返回的包装方法。 
 
-    包装器的实际实现，是闭包、函数参数收集、分配参数的综合运用：
+    包装器的实际实现，是闭包、收集参数、分配参数的综合运用：
 
         def positive_result(function):
             '此包装器实现了在被修饰函数结果为正数时正常返回，为负数时抛出异常的功能'
@@ -1308,17 +1308,134 @@ $ pip install --no-index --find-index=. -r requirements.txt
         def discriminant(a, b, c):
             '完成对二次项系数为a，一次项系数为b，常数项为c的一元二次方程判别式的计算'
             return (b ** 2) - (4 * a * c)
+
+    如果要实现带参数的修饰器，修饰器语法本身是不支持的，可以利用双层嵌套函数来实现：
+
+        def bounded(minimum, maximum):
+            def decorated(function):
+                def wrapper(*args, **kwargs):
+                    result = function(*args, **keyargs):
+                    if result < minus:
+                        return minimum
+                    elif result > maximum:
+                        return maximum
+                    return result
+                return wrapper
+            return decorated
+        
+        @bounded(0, 100)
+        def func(a, b):
+            ...
+
+    上面的例子中，`python` 解释器在遇到 `@bounded(0, 100)` 这一行时，会先调用 `bounded(0, 100)`，此调用返回 `decorated(func)` 函数，这个函数才是与 `@` 搭配的修饰器。
+
+    在后续调用被修饰的 `func(a, b)` 函数时，会按前述的步骤完成修饰器的调用。因为修饰器 `decorated` 是个局部函数，它可以使用外部函数 `bounded` 接收到的两个参数。这样就间接实现了带有参数的修饰器。
 ## 九、类与对象
 
 1. 类、属性、方法
-2. 特性
-3. 继承与多态：多继承
-4. 静态方法
-5. 类方法
-6. 构造函数与初始化函数
-7. 抽象类
-8. 接口和内省
-9. __dict__和__slots__
+
+    定义类有两种语法：
+
+        class className:
+            suite
+
+        class className(baseClass):
+            suite
+
+    如果要指定超类，就使用第二种语法，在括号内指定超类。如果不指定超类，则直接继承自顶层类（`object`），也即是说，第一种语法与在括号内指定 `object` 是等效的。
+
+    方法的定义语法：
+
+        class className:
+            def func(self, ...):
+                suite
+
+    方法的第一个参数，是隐式传递的，与调用方法的对象关联，因此在方法内部，就可以使用 `self.` 语法访问关联对象的方法和属性。`self` 并非关键字，与普通变量名无异，可以自由命名，使用 `self` 仅是惯例。
+
+    `python` 中，对象的属性与普通变量类似，无需预告定义，赋值后即可使用，但不能直接读取未赋值的属性。
+
+2. 访问控制
+
+    `python` 没有用于访问控制类的关键字，也没有绝对意义上的访问控制。
+
+    如果想让属性或方法在类外不能访问，可以让属性或方法名以两个下划线开头，不过这只是想让其他程序员明白，这些属性或变量不希望被在外部访问。底层实现仅仅是对两个下划线开头的名称进行了替换，再前面加了一个下划线和类名，使用替换后的名称仍然可以访问：
+
+        >>> class className:
+        ...    __prop = 10
+        ...
+        >>> c = className()
+        >>> print(c.__prop) #抛出异常
+        >>> print(c._className__prop)
+        10
+
+    更弱一点的方式是，以一个下划线开头命名属性或方法，以警告其他程序员，这些属性和方法不希望被外部访问。在使用 `import *` 导入模块时，不会导入以一个下划线开头的名称。
+
+3. 特性
+
+    特性是指以属性的语法访问，但实际是调用了存取方法，这是用 `property` 函数实现的：
+
+        property([fget=None[, fset=None[, fdel=None[, doc=None]]]])
+
+    第一个参数是用于获取特性的方法，第二个参数是给特性赋值的方法，第三个参数是删除特性的方法，第四个参数则是 `docstring`。
+
+        class Rectangle:
+            
+            def set_size(self, size):
+                self.width, self.height = size
+            
+            def get_size(self):
+                return self.width, self.height
+            
+            size = property(get_size, set_size, doc='矩形的尺寸为长、宽')
+
+        
+        >>> r = Rectangle()
+        >>> r.width = 10
+        >>> r.height = 5
+        >>> r.size
+        (5, 10)
+        >>> r.size = 150, 100
+        >>> r.width
+        150
+        >>> Rectangle.size.__doc__
+        '矩形的尺寸为长、宽'
+
+    `property` 的各个参数均可省略。如果省略 `doc`，则会尝试使用 `fget` 方法的 `docstring`。
+
+    特性更常用的方式是使用 `@property` 修饰器，使用该修饰器修饰的方法名将作为特性名，被修饰的方法将作为特性的 `fget` 方法，该方法的 `docstring` 将作为特性的 `docstring`。同时会生成 `特性名.setter` 和 `特性名.deleter` 修改器，用这两个修改器修饰的方法将分别作为特性的 `fset` 和 `fdel` 方法。
+
+    使用修饰器时，甚至可以使用同名的方法：
+
+        class C(object):
+            def __init__(self):
+                self._x = None
+        
+            @property
+            def x(self):
+                """I'm the 'x' property."""
+                return self._x
+        
+            @x.setter
+            def x(self, value):
+                self._x = value
+        
+            @x.deleter
+            def x(self):
+                del self._x
+
+    有一个小细节需要注意：特性名与要存取的属性名不能相同，否则会造成递归调用。
+
+4. 继承与多态：多继承
+
+    
+5. 静态方法
+6. 类方法
+7. 构造函数与初始化函数
+8. 抽象类
+9. 内部类
+10. 描述符
+11. 接口和内省
+12. __dict__和__slots__
 
 ## 十、迭代器和生成器
 
