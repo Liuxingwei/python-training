@@ -1087,6 +1087,53 @@ $ pip install --no-index --find-index=. -r requirements.txt
 
             class exceptionName(baseException): pass
 
+7. `eval` 和 `exec`
+
+    `eval` 函数用于将一个字符串作为**表达式**进行解析并执行，并返回表达式的值。
+
+        eval(expression[, globals=None[, locals=None]])
+
+    `expression` 参数是一个字符串表达式，其值必须是可以执行的 `python` **表达式**。如果提供了 `globals` 字典，则 `globals` 将作为被执行语句的全局命名空间（只读），如果提供了 `locals`，则 `locals` 将作为执行语句的局部命名空间（只读）。如果后两个参数均不提供，将会读取外围命名空间。
+    一般第三个参数很少使用，但第二个参数用的较多，用于隔离全局命名空间。
+
+        >>> def func():
+        ...    a = 3
+        ...    b = eval('a * a')
+        ...    print(b)
+        ...
+        >>> func()
+        9
+
+        >>> def func():
+        ...    a = 3
+        ...    context = {'a': 5}
+        ...    b = eval('a * a', context)
+        ...    print(b)
+        >>> func()
+        25
+
+    `exec` 函数用于将一个字符串作为语句进行解析并执行，没有返回值。
+
+        exec(expression[, globals=None[, locals=None]])
+
+    `expression` 参数是一个字符串表达式，其值必须是可以执行的 `python` **语句**表达式。如果提供了 `globals` 字典，则 `globals` 将作为被执行语句的全局命名空间（读写），如果提供了 `locals`，则 `locals` 将作为执行语句的局部命名空间（读写）。如果后两个参数均不提供，将会读取外围命名空间。
+    一般第三个参数很少使用，但第二个参数用的较多，用于保护全局命名空间。
+
+        >>> def func():
+        ...    a = 3
+        ...    exec('a += 1')
+        ...    print(a)
+        ...
+        >>> func()
+        3
+
+        >>> def func():
+        ...    a = 3
+        ...    context = {'a': a}
+        ...    eval('a += 1', context)
+        ...    print(context['a'])
+        >>> func()
+        4
 ## 八、自定义函数
 
 1. 基本格式
@@ -1311,8 +1358,10 @@ $ pip install --no-index --find-index=. -r requirements.txt
 
     如果要实现带参数的修饰器，修饰器语法本身是不支持的，可以利用双层嵌套函数来实现：
 
+        import functools
         def bounded(minimum, maximum):
             def decorated(function):
+                @functools.wraps(function)
                 def wrapper(*args, **kwargs):
                     result = function(*args, **keyargs):
                     if result < minus:
@@ -1330,6 +1379,12 @@ $ pip install --no-index --find-index=. -r requirements.txt
     上面的例子中，`python` 解释器在遇到 `@bounded(0, 100)` 这一行时，会先调用 `bounded(0, 100)`，此调用返回 `decorated(func)` 函数，这个函数才是与 `@` 搭配的修饰器。
 
     在后续调用被修饰的 `func(a, b)` 函数时，会按前述的步骤完成修饰器的调用。因为修饰器 `decorated` 是个局部函数，它可以使用外部函数 `bounded` 接收到的两个参数。这样就间接实现了带有参数的修饰器。
+
+    另外这一段代码中，对包装函数使用了 `@functools.wraps`，这个函数实现了前面的 `wrapper.__name__ = function.__name__`、`wrapper.__doc__ = function.__doc__` 等一些功能，并且在自省和 `unwrap` 时有用。
+
+11. 判断一个对象是否为函数（方法、类）
+
+    `callable(__obj)` 函数用于判断一个对象是否可调用（函数、方法和类都是可调用的）。
 ## 九、类与对象
 
 1. 类、属性、方法
@@ -1370,6 +1425,58 @@ $ pip install --no-index --find-index=. -r requirements.txt
 
     更弱一点的方式是，以一个下划线开头命名属性或方法，以警告其他程序员，这些属性和方法不希望被外部访问。在使用 `import *` 导入模块时，不会导入以一个下划线开头的名称。
 
+    `python` 有数个拦截对象访问的特殊方法：
+
+    1. `__getattr__(self, name)`
+
+        在属性被访问，但对象没有此属性时调用
+
+    2. `__setattr__(self, name, value)`
+
+        试图给属性赋值时调用 
+
+    3. `__delattr__(self, name)`
+
+        试图删除属性时调用
+
+    4. `__getattribute__(self, name)`
+
+        在属性被访问时调用
+
+    在使用 `__setattr__` 和 `__getattribute__` 方法时要注意避免递归调用。
+
+    避免 `__setattr__` 递归的方法，是对不需要拦截的名称直接使用 `__dict__` 属性。
+
+    避免 `__getattribute__` 递归的方法，是对不需要拦截的名称调用超类的同名方法。
+
+        class Rectangle:
+
+            def __init__(self):
+                self.width = 0
+                self.height = 0
+
+            def __setattr__(self, name, value):
+                if 'size' == name:
+                    self.width, self.height = value
+                else:
+                    self.__dict__[name] = value
+
+            def __getattr__(self, name):
+                if 'size' == name:
+                    return self.width, self.height
+                else:
+                    raise AttributeError
+
+            def __getattribute__(self, name):
+                if 'size' == name:
+                    return self.width, self.height
+                else:
+                    return super().__getattribute__(name)
+
+    `getattr(__o, name[, __default])` 函数可以用来获取对象的属性，并可在对象属性不存在时提供一个默认值。它将调用对象的 `__getattr(self, name)` 方法。
+
+    `setattr(__o, name, value)` 函数则可以用来为对象属性赋值。它将调用对象的 `__setattr(self, name)` 方法。
+
 3. 特性
 
     特性是指以属性的语法访问，但实际是调用了存取方法，这是用 `property` 函数实现的：
@@ -1379,16 +1486,16 @@ $ pip install --no-index --find-index=. -r requirements.txt
     第一个参数是用于获取特性的方法，第二个参数是给特性赋值的方法，第三个参数是删除特性的方法，第四个参数则是 `docstring`。
 
         class Rectangle:
-            
+
             def set_size(self, size):
                 self.width, self.height = size
-            
+
             def get_size(self):
                 return self.width, self.height
-            
+
             size = property(get_size, set_size, doc='矩形的尺寸为长、宽')
 
-        
+
         >>> r = Rectangle()
         >>> r.width = 10
         >>> r.height = 5
@@ -1409,41 +1516,558 @@ $ pip install --no-index --find-index=. -r requirements.txt
         class C(object):
             def __init__(self):
                 self._x = None
-        
+
             @property
             def x(self):
                 """I'm the 'x' property."""
                 return self._x
-        
+
             @x.setter
             def x(self, value):
                 self._x = value
-        
+
             @x.deleter
             def x(self):
                 del self._x
 
     有一个小细节需要注意：特性名与要存取的属性名不能相同，否则会造成递归调用。
 
-4. 继承与多态：多继承
+4. 继承、多继承与多态、接口
 
-    
+    继承：在定义类的时候，可以在括号内指定超类。
+
+    多继承：`python` 支持多继承，只需在定义类时，指定超类列表。
+
+    当多个超类有相同的方法时，超类列表中居前的方法将遮蔽位于后面的类的同名方法。
+
+    判断一个类是否为另一个类的子类，可以使用 `issubclass` 函数：
+
+         issubclass(subClassName, superClassName)
+
+    获取一个类的所有直接超类，可以使用类的 `__bases__` 属性。
+
+    判断一个对象是否是一个类（或其子类）的实例，可以使用 `isinstance` 函数：
+
+        isinstance(objectName, className)
+
+    通过对象的 `__class__` 属性或使用 `type(objectName)` 可以获取对象所属的类。
+
+    访问超类的方法和属性，需要先调用 `supper()` 函数，再调用其返回对象的方法：
+
+        class Bird:
+
+            def __init__(self):
+                self.hungry = True
+
+            def eat(self):
+                if self.hungry:
+                    print('Aaaah...')
+                    self.hungry = False
+                else:
+                    print('No, thanks')
+
+
+        class SongBird(Bird):
+
+            def __init__(self):
+                super().__init()
+                self.sound = 'Squawk!'
+
+            def sing(self):
+                print(self.sound)
+
+    `super` 的完整语法：
+
+        super([t=currentClass[, obj=self]])
+
+    在一些旧的代码中，上例中的 `super` 可能写成这样：
+
+        super(SongBird, self).__init__()
+
+    不同于强类型语言，`python` 的多态，沿袭了鸭子类型（duck typing），而不是接口继承。`python` 中也没有专门的接口语法，如果一定要作用接口，可以使用多继承加纯抽象类（不含有非抽象方法的类）来实现。
+
+
 5. 静态方法
+
+    使用 `@staticmethod` 修饰器修饰的方法为静态方法，**静态方法与实例方法的区别在于，它不需要与对象关联的参数（self）**。当然它也无法访问对象属性和方法。
+
+        class MyClass:
+
+            @staticmethod
+            def smeth(*parameters):
+                print('This is a static method')
+                print(parameters)
+
 6. 类方法
-7. 构造函数与初始化函数
-8. 抽象类
-9. 内部类
-10. 描述符
-11. 接口和内省
-12. __dict__和__slots__
+
+    使用 `@classmethod` 修饰器修饰的方法为类方法，**类方法的第一个参数，在调用时自动与调用方法的类相关联，惯例上这个参数命名为 `cls`**。
+
+        class MyClass:
+
+            prop = 'Class’s property'
+
+            @classmethod
+            def cmeth(cls):
+                print('This is a class method')
+                print(cls.prop)
+
+7. 静态属性、类属性、实例属性
+
+    不同于静态方法和类方法，静态属性和类属性在 `python` 中是同一概念，即使用类名访问的属性。
+
+    而实例属性则是用对象来访问的。
+
+    在 `python` 中，属性均无需定义，赋值即可使用。因此，类属性和实例属性的关系比较微妙。
+
+    在类定义中，方法外赋值的属性，可以被视为类属性，而在方法内，用 `self.属性名` 的形式赋值的属性，则为实例属性。
+
+    在类外访问时，使用 `className.属性` 赋值的即是类属性，使用 `objectName.属性` 赋值的即是实例属性。
+
+    读取时，在没有同名实例属性（即没有给同名实例属性赋值）的前提下，既可以使用 `className.属性` 形式，也可以使用 `self.属性`、`objectName.属性` 形式访问。
+
+    一旦给实例属性赋了值，则再使用 `self.属性` 或 `objectName.属性` 形式，则只能访问实例属性。
+
+        >>> class first_cls:
+        ...    a = 0
+        ...
+        >>> fcls = first_cls()
+        >>> print('first_cls.a:', first_cls.a)
+        first_cls.a: 0
+        >>> print('fcls.a:', fcls.a)
+        fcls.a: 0
+        >>> first_cls.a = 9
+        >>> print('first_cls.a:', first_cls.a)
+        first_cls.a: 9
+        >>> print('fcls.a:', fcls.a)
+        fcls.a: 9
+        >>> fcls.a = 13
+        >>> print('first_cls.a:', first_cls.a)
+        first_cls.a: 9
+        >>> print('fcls.a:', fcls.a)
+        fcls.a: 13
+        >>> first_cls = 30
+        >>> print('first_cls.a:', first_cls.a)
+        first_cls.a: 30
+        >>> print('fcls.a:', fcls.a)
+        fcls.a: 13
+
+    如下形式在很多代码示例中出现过：
+
+        class MyClass:
+            a = 10
+            def increment(self):
+                self.a += 1
+
+8. 构造函数与初始化函数
+
+    `python` 中在创建对象之后，会自动调用 `__init__(self, ...)` 方法对对象进行初始化。如果超类不是 `object`，通常需要在 `__init__(self, ...)` 方法中先调用超类的 `__init__(self, ...)` 方法，以完成父类的初始化步骤。见第四小节的例子。
+
+    会有很多资料说 `__init__(self, ...)` 方法是构造方法，这是因为真正的构造方法用的较少，才会有此误会。
+
+    `python` 中的构造方法是 `__new__(cls, ...)`，这是一个类方法，它的第一个参数是与类关联的，`__new__(cls, ...)` 方法需要有一个返回值，这个返回值就是创建的对象。
+
+    构造函数的一个典型用途是继承并修改不可变类型，有兴趣可以参看：https://www.cnblogs.com/shenxiaolin/p/9307496.html
+
+9. 运算符重载及其它特殊方法
+
+    运算符重载方法：
+
+    | 方法 | 重载的运算符 |
+    |----|----|
+    | __pos__(self) | + self |
+    | __neg__(self) | - self |
+    | __invert__(self) | ~ self |
+    | __add__(self, other) | self + other |
+    | __iadd__(self, other) | self += other |
+    | __radd__(self, other) | other + self |
+    | __sub__(self, other) | self - other |
+    | __isub__(self, other) | self -= other |
+    | __rsub__(self, other) | other - self |
+    | __mul__(self, other) | self * other |
+    | __imul__(self, other) | self *= other |
+    | __rmul__(self, other) | other * self |
+    | __mod__(self, other) | self % other |
+    | __imod__(self, other) | self %= other |
+    | __rmod__(self, other) | other % self |
+    | __floordiv__(self, other) | self // other |
+    | __ifloordiv__(self, other) | self //= other |
+    | __rfloordiv__(self, other) | other // self |
+    | __truediv__(self, other) | self / other |
+    | __itruediv__(self, other) | self /= other |
+    | __rtruediv__(self, other) | other / self |
+    | __pow__(self, other) | self ** other |
+    | __ipow__(self, other) | self **= other |
+    | __rpow__(self, other) | other ** self |
+    | __and__(self, other) | self & other |
+    | __iand__(self, other) | self &= other |
+    | __rand__(self, other) | other & self |
+    | __or__(self, other) | self \| other |
+    | __ior__(self, other) | self \|= other |
+    | __ror__(self, other) | other \| self |
+    | __xor__(self, other) | self ^ other |
+    | __ixor__(self, other) | self ^= other |
+    | __rxor__(self, other) | other ^ self |
+    | __lshift__(self, other) | self << other |
+    | __ilshift__(self, other) | self <<= other |
+    | __rlshift__(self, other) | other << self |
+    | __rshift__(self, other) | self >> other |
+    | __irshift__(self, other) | self >>= other |
+    | __rrshift__(self, other) | other >> self |
+    | __lt__(self, other) | self < other |
+    | __le__(self, other) | self <= other |
+    | __eq__(self, other) | self == other |
+    | __ne__(self, other) | self != other |
+    | __gt__(self, other) | self > other |
+    | __ge__(self, other) | self >= other |
+
+    函数调用相关特殊方法
+
+    | 方法 | 对应函数调用 | 
+    |----|----|
+    | __abs__(self) | abs(self) |
+    | __float__(self) | float(self) |
+    | __int__(self) | int(self) |
+    | __index__(self) | bin(self) oct(self) hex(self) |
+    | __round__(self,, digits) | round(self, digits) |
+    | __complex__(self) | complex(self) |
+    | __bool__(self) | bool(self) |
+    | __hash__(self) | hash(self) |
+    | __str__(self) | str(self) |
+    | __ascii__(self) | ascii(self) |
+    | __repr__(self) | repr(self) |
+    | __format__(self, format_spec) | "{0}".format(self) |
+
+10. 动态扩充和修改类
+
+    不同于 `Java`，`python` 的类并不是定义之后就一成不变的，可以随时根据需要对类进行扩充和修改。并且这种扩展和修改对已经创建的类实例也是有效的。
+
+        >>> class mc:
+        ...     def __init__(self):
+        ...         pass
+
+        >>> m = mc()
+        >>> mc.newfunc = lambda self, a, b: a + b
+        >>> mc.newprop = 30
+        >>> n = mc()
+        >>>> m.newfunc(3, 4)
+        7
+        >>> n.newfunc(3, 4)
+        7
+        >>> m.newprop
+        30
+        >>> m.newprop
+        30
+        >>> mc.__init__ = lambda self: print("I'm new init function.")
+        >>> nm = mc()
+        I'm new init function.
+
+11. 局部类（内部类）
+
+    定义在函数或方法内的类，称为局部类（内部类）。
+
+    与局部函数类似，局部类也可以访问其外部作用域，而且 `python` 的类也是对象，是可以传递的。
+
+    因此可以像闭包函数一样，让外部函数或方法返回局部类，这可以用于动态定义类。
+
+12. 类修饰器
+
+    类修饰器用于对类进行包装，它接收一个类作为唯一参数，并返回一个对传入的类进行包装的类，不同于函数修饰器的是，通常不需要另外定义一个类，仅需要对被包装进行修改和扩展，将修改后的类返回即可。
+
+    如下修饰器将为实现了 `__le__` 方法的类添加其他五种比较运算符重载方法：
+
+        def complete_comparisons(cls):
+            assert cls.__lt__ is not object.__lt__, "{0} must define <.".format(cls.__name__)
+            cls.__eq__ = lambda self, other: (not (cls.__lt__(self, other) or cls.__lt__(other, self)))
+            cls.__ne__ = lambda self, other: not cls.__eq__(self, other)
+            cls.__gt__ = lambda self, other: cls.__lt__(other, self)
+            cls.__le__ = lambda self, other: not cls.__lt__(other, self)
+            cls.__ge__ = lambda self, other: not cls.__lt__(self, other)
+
+13. 抽象基类
+
+    抽象基类不能实例化，仅能作为其它类的超类。
+
+    `python` 中的抽象基类必须同时满足如下两个条件‘
+
+    1. 元类是 `abc.ABCMeta`，或者其超类链中有元类为 `abc.ABCMeta` 的类。
+    2. 类中包含抽象方法或抽象特性。
+
+    用于定义抽象方法的方法的修饰器有三个：
+    
+    1. `abc.abstractmethod`
+    2. `abc.abstractclassmethod`
+    3. `abc.abstractstaticmethod`
+
+    用于定义抽象特性的修饰器有：
+
+    `abc.abstractproperty`
+
+    下面的例子较长，展示了抽象方法和抽象特性：
+
+        >>> import abc
+        ... class haha:
+        ...     def haha(self):
+        ...         print('haha')
+        ... class Appliance(haha, metaclass=abc.ABCMeta):
+        ...     @abc.abstractmethod
+        ...     def __init__(self, model, price):
+        ...         self.__model = model
+        ...         self.__price = price
+        ...
+        ...     @abc.abstractproperty
+        ...     def price(self):
+        ...         return self.__price
+        ...     @price.setter
+        ...     def set_price(self, price):
+        ...         self.__price = price
+        ...     @property
+        ...     def model(self):
+        ...         return self.__model
+        ...     @model.setter
+        ...     def model(self, model):
+        ...         self.__model = model
+        ... class MyAppliance(Appliance):
+        ...     def __init__(self, model, price):
+        ...         super().__init__(model, price)
+        ...     @property
+        ...     def price(self):
+        ...         return super().price
+        ...     @price.setter
+        ...     def set_price(self, price):
+        ...         super().set_price(self, price)
+        ... ma = MyAppliance('kabang', 150)
+        >>> ma.price
+        150
+        >>> ma.haha()
+        'haha'
+
+    需要注意的是，抽象方法仅仅只是要求子类必须实现的方法，它本身并没有特殊的语法，不能像其他语言的抽象方法那样没有方法体。
+
+14. 元类（略）
+15. 函子（略）
+16. 描述符（略）
+17. 内省
+
+    `python` 的内省机制类似于 `Java` 等语言的反射，使用的是 `inspect` 模块。
+
+    `inspect` 模块有四类用途：
+
+    1. 类型和成员
+
+        1、`getmembers(object[, predicate])`
+
+            返回对象的成员列表。如果提供了第二参数，则仅返回第二参数为真的成员。第二个参数主要使用以 `is` 开头的函数，这类函数也可单独使用。
+
+        2. `isxxxx(object)` 方法
+
+            这一组方法用于判断，比如判断是否为函数：
+
+                >>> def a():
+                ...     pass
+                ...
+                >>> inspect.isfunction()
+                True
+
+            列表如下：
+            `ismodule`、`isclass`、`ismethod`、`isfunction`、`isgeneratorfunction`、`isgenerator`、`iscoroutinefunction`、`iscoroutine`、`isawaitable`、`isasyncgenfunction`、`isaayncgen`、`istraceback`、`isframe`、`iscode`、`isbuiltin`、`isroutine`、`isabstract`、`ismethoddescriptor`、`isdatadescriptor`、`isgetsetdescriptor`、`ismemberdescriptor`
+
+        3. `getmodulename`
+
+            获取区块名称
+
+    2. 获取源代码
+
+        `getdoc`、`getcomments`、`getfile`、`getmodule`、`getsourcefile`、`getsourcelines`、`getsource`、`cleandoc`
+
+    3. 获取类或函数信息
+
+        `signature`、`getclasstree`、`getargspec`、`getfullargspec`、`getargvalues`、`formatargspec`、`formatargvalues`、`getmro`、`getcallargs`、`getclosurevars`、`unwrap`
+
+    4. 解析堆栈
+
+        `stak`、`trace`、`getframeinfo`、`getouterframes`、`getinnerframes`、`currentframe`
+
+18. `__dict__` 和 `__slots__`
+
+    对象的 `__dict__` 是一个字典类型的属性，存储了所有的实例属性。它是可以动态改变的。
+
+    如果想要有固定的属性项，可以使用 `__slots__`，它是一个元组。
+
+        >>> class employee:
+        ...    __slots__ = ('name', 'sex', 'age', 'height', 'weight')
+        ...
+        >>> e = employee()
+        >>> e.address = 'dalian'
+        Traceback (most recent call last):
+        File "<stdin>", line 1, in <module>
+        AttributeError: 'employee' object has no attribute 'address'
+
+    使用 `__slots__` 时要注意，不要使用同名的类变量，否则会使实例变量失效（赋值时提示对象属性只读，读取时读取类变量的值）。
+
+19. 上下文管理器和 `with` 块
+
+    上下文管理器是指有 `__enter__` 和 `__exit__` 方法的对象。
+
+    上下文管理器与 `with` 语句块组合使用，可以达到自动释放资源的目的。
+
+        with expression as variable:
+            suite
+
+    `expression` 表达式必须是或必须生成一个上下文管理器。在开始执行语句块前，将自动调用上下文管理器的 `__enter__` 方法，如果提供了可选的 `as variable` 部分，则 `variable` 将引用 `__enter__` 方法的返回的对象（通常该方法将返回上下管理器本身）。
+
+    在退出 `with` 范围时，将自动调用上下文管理器的 `__exit__` 方法（即使语句块发生异常）。
+
+    在资源本身是上下文管理器，且其退出方法保证了资源关闭的情况下，不需要使用 `finally` 子句保证资源的关闭。
+
+        try:
+            with open(filename) as fh:
+                for line in fh:
+                    process(line)
+        expect EnvironmentError as err:
+            print(err)
+
+    `with` 也支持多个上下文管理器：
+
+        try:
+            with open(source) as fin, open(target, 'w') as fout:
+                for line in fin:
+                    fout.write(process(line))
+        expect EnvironmentError as err:
+            print(err)
 
 ## 十、迭代器和生成器
 
 1. 迭代器
-    1. 可迭代对象
-    2. 迭代器
+
+    迭代器协议要求迭代器对象必须实现 `__next__` 方法，可迭代对象必须实现 `__iter__` 方法，且该方法需要返回一个迭代器。
+
+    `for` 循环的 `in` 子句需要一个可迭代对象，实际迭代的则是可迭代对象的 `__iter__` 方法返回的迭代器，每次迭代调用迭代器的 `__next__` 方法，生成迭代变量。
+    
+        >>> class Fibs:
+        ...    def __init__(self):
+        ...        self.a = 0
+        ...        self.b = 1
+        ...    def __next__(self):
+        ...        self.a, self.b = self.b, self.a + self.b
+        ...        return self.a
+        ...
+        >>> class FibsIter:
+        ...    def __iter__(self):
+        ...        return Fibs()
+        ...
+        >>> for f in FibsIter():
+        ...    if f > 1000:
+        ...        print(f)
+        ...        break
+        ...
+        1597
+
+    实际应用中，通常可迭代对象和迭代器对象是二合一的，通称为迭代器：
+
+        >>> class Fibs:
+        ...    def __init__(self):
+        ...        self.a = 0
+        ...        self.b = 1
+        ...    def __next__(self):
+        ...        self.a, self.b = self.b, self.a + self.b
+        ...        return self.a
+        ...    def __iter__(self):
+        ...        return Fibs()
+        ...
+        >>> for f in Fibs():
+        ...    if f > 1000:
+        ...        print(f)
+        ...        break
+        ...
+        1597
+
+    可以使用 `iter` 函数调用迭代器的 `__iter__` 方法，获得返回的迭代器对象。
+    可以使用 `next` 函数调用迭代器的 `__next__` 方法，进行一次迭代。
+
+        >>> class Fibs:
+        ...    def __init__(self):
+        ...        self.a = 0
+        ...        self.b = 1
+        ...    def __next__(self):
+        ...        self.a, self.b = self.b, self.a + self.b
+        ...        return self.a
+        ...
+        >>> class FibsIter:
+        ...    def __iter__(self):
+        ...        return Fibs()
+        ...
+        >>> fibs = iter(FibsIter())
+        >>> next(fibs)
+        1
+        >>> next(fibs)
+        1
+        >>> next(fibs)
+        2
+        >>> next(fibs)
+        3
+        >>> next(fibs)
+        5
+
 2. 生成器
 
+    生成器函数是包含了 `yield` 表达式的函数。
+
+        >>> def sum_seq(min, max, step):
+        ...    s = 0
+        ...    while min < max:
+        ...        s += min
+        ...        min += step
+        ...        yield s
+
+    调用这个函数，并不会执行循环，而是返回一个迭代器（同时也是生成器）。
+
+    对这个迭代器的每次迭代，都会返回 `yield` 表达式中子表达式的值，并冻结函数，直到下一次迭代时被唤醒，从 `yield` 表达式的下一行继续执行。
+
+    如果生成器的代码执行结束，或执行了一个 return 语句，将产生 `StopIterationException`，`for` 循环在遇到此异常时，将直接终止循环。
+
+        >>> ss = sum_seq(3, 99, step)
+        >>> next(ss)
+        3
+        >>> next(ss)
+        8
+        >>> next(ss)
+        15
+
+        >>> for s in sum_seq(3, 99, step):
+        >>>     pass
+        >>> else:
+        >>>     print(s)
+        ...
+        2400
+
+    生成器函数返回的生成器，还有 `send`、`throw` 和 `close` 方法。
+
+    方法 `throw` 用于在生成器中 `yield` 表达式处引发异常，调用时可提供一个异常类型、一个可选值和一个traceback对象。
+    
+    方法 `close` 用于停止生成器，调用时无需提供任何参数。调用此方法后，再试图从生成器获取值将导致 `RuntimeError` 异常。
+
+    `yield` 表达式除了可返回其子表达式的值，也可以通过接收调用 `send` 方法传递的值。`__next__` 方法和 `send(None)` 作用相同。
+
+        >>> def quarters(next_quarter=0.0):
+        ...     while True:
+        ...         received = (yield next_quarter)
+        ...         if received is None:
+        ...             next_quarter += 0.25
+        ...         else:
+        ...             next_quarter = received
+        ...
+        >>> generator = quarter()
+        >>> next(generator)
+        0.0
+        >>> next(generator)
+        0.25
+        >>> generator.send(1.0)
+        1.0
+        >>> next(generator)
+        1.25
+        >>> generator.send(None)
+
+    需要注意的是，仅当生成器被挂起后，传递值才有意义，否则会报错，因此第一次迭代生成器，需要作用 `next` 函数或调用参数为 `None` 的 `send`方法。
 ## 十一、模块和包
 
 1. 模块
@@ -1467,10 +2091,10 @@ $ pip install --no-index --find-index=. -r requirements.txt
 
 1. 断点调试
 2. 单元测试
-## 十四、进程、线程、协程
+## 十四、线程、进程、协程
 
-1. 进程
-2. 线程
+1. 线程
+2. 进程
 3. 协程
 
 ## 十五、程序打包
