@@ -1844,7 +1844,22 @@ $ pip install --no-index --find-index=. -r requirements.txt
     需要注意的是，抽象方法仅仅只是要求子类必须实现的方法，它本身并没有特殊的语法，不能像其他语言的抽象方法那样没有方法体。
 
 14. 元类（略）
-15. 函子（略）
+15. 函子
+
+    函子是实现了 `__call__` 方法的对象，它是另一种类型的函数对象。对它的函数形式的调用即是对它的 `__call__` 方法的调用。
+
+        >>> class Strip:
+        ...     def __init__(self, characters):
+        ...         self.charactors = characters
+        ...     def __call__(self, string)
+        ...         return string.strip(sef.characters)
+        ...
+        >>> strip_punctuation = Strip(",;:.!?")
+        >>> strip_punctuation("Land, ahoy!")
+        Land ahoy
+
+    函数不能执有状态，这就是函子的发挥场景，但很多时候，使用 `闭包` 更符合动态语言的习惯。
+
 16. 描述符（略）
 17. 内省
 
@@ -1858,7 +1873,7 @@ $ pip install --no-index --find-index=. -r requirements.txt
 
             返回对象的成员列表。如果提供了第二参数，则仅返回第二参数为真的成员。第二个参数主要使用以 `is` 开头的函数，这类函数也可单独使用。
 
-        2. `isxxxx(object)` 方法
+        1. `isxxxx(object)` 方法
 
             这一组方法用于判断，比如判断是否为函数：
 
@@ -1871,7 +1886,7 @@ $ pip install --no-index --find-index=. -r requirements.txt
             列表如下：
             `ismodule`、`isclass`、`ismethod`、`isfunction`、`isgeneratorfunction`、`isgenerator`、`iscoroutinefunction`、`iscoroutine`、`isawaitable`、`isasyncgenfunction`、`isaayncgen`、`istraceback`、`isframe`、`iscode`、`isbuiltin`、`isroutine`、`isabstract`、`ismethoddescriptor`、`isdatadescriptor`、`isgetsetdescriptor`、`ismemberdescriptor`
 
-        3. `getmodulename`
+        2. `getmodulename`
 
             获取区块名称
 
@@ -2094,7 +2109,315 @@ $ pip install --no-index --find-index=. -r requirements.txt
 ## 十四、线程、进程、协程
 
 1. 线程
+
+    1. 使用 `threading` 模块实现多线程，有两种模式：
+    
+       1. 调用 `threading.Thread` 方法，传递函数及其参数，创建线程
+
+               >>> import time
+               ... import threading
+               ... def demo(n):
+               ...     while n >= 0:
+               ...         print('n:', n)
+               ...         n -= 1
+               ...         time.sleep(1)
+               ...
+               >>> t = threading.Thread(target=demo, args=(10,))
+               >>> t.start()
+               10
+               >>> t.join()
+               9
+               8
+               7
+               6
+               5
+               4
+               3
+               2
+               1
+               0
+
+           `threading.Thread` 方法的签名：
+
+               threading.Thread(group=None, target=None, name=None, args=(), kwargs={}, daemon=None)
+
+           `group` 参数是保留的参数，目前必须是 `None`。
+
+           `target` 参数即为要调用的函数。
+
+           `name` 是线程的名字。如果为 `None`，`python` 会自动为线程指定一个名称。
+
+           `args` 是要传递给被调用函数的位置参数元组，默认为 ()。
+
+           `kwargs` 是要传递给被调用函数的关键字参数字典，默认为 {}。
+
+           `daemon` 用于指定线程是否为守护模式。如果为 `None`，将继承当前线程的守护模式属性，如果为 `True` 则为守护线程，如果为 `False` 则为非守护线程。
+
+       2. 继承 `threading.Thread` 类，实现其 `run()` 方法。
+
+           启动线程，调用 `threading.Thread` 实例的 `start()` 方法，它会调用线程的 `run()` 方法。
+
+               >>> import threading
+               >>> import time
+               >>> class myThread (threading.Thread):
+               ...    def __init__(self, threadID, name, counter):
+               ...        threading.Thread.__init__(self)
+               ...        self.threadID = threadID
+               ...        self.name = name
+               ...        self.counter = counter
+               ...    def run(self):
+               ...        print ("开始线程：" + self.name)
+               ...        print_time(self, self.counter, 5)
+               ...        print ("退出线程：" + self.name)
+               ...
+               >>> def print_time(thread, delay, counter):
+               ...    while counter:
+               ...        time.sleep(delay)
+               ...        print ("%s: %s" % (thread.name, time.ctime(time.time())))
+               ...        counter -= 1
+               ...
+               >>> thread1 = myThread(1, "Thread-1", 1)
+               >>> thread2 = myThread(2, "Thread-2", 2)
+               >>> thread1.start()
+               开始线程：Thread-1
+               >>> thread2.start()
+               开始线程：Thread-2
+               >>> thread1.join()
+               Thread-1: Wed May  5 18:35:21 2021
+               Thread-1: Wed May  5 18:35:22 2021
+               Thread-2: Wed May  5 18:35:22 2021
+               Thread-1: Wed May  5 18:35:23 2021
+               Thread-2: Wed May  5 18:35:24 2021
+               Thread-1: Wed May  5 18:35:24 2021
+               Thread-1: Wed May  5 18:35:25 2021
+               退出线程：Thread-1
+               >>> thread2.join()
+               Thread-2: Wed May  5 18:35:26 2021
+               Thread-2: Wed May  5 18:35:28 2021
+               Thread-2: Wed May  5 18:35:30 2021
+               退出线程：Thread-2
+               >>> print ("退出主线程")
+               退出主线程
+
+           需要注意的是，继承 `threading.Thread` 类的线程类，如果实现了自己的 `__init__` 方法，必须调用 `threading.Thread` 的 `__init__` 方法。
+
+           调用线程的 `join(timeout=None)` 方法，将会阻塞启动该线程的线程，等待该线程终结后（或者在指定的超时时间后）恢复。判断线程是否超时，是在 `join()` 方法后调用线程的 `is_alive()` 方法，如果在阻塞恢复后，`is_alive()` 仍然返回 `True`，则表明线程已超时。
+
+       3. 锁
+
+           锁有两种状态：「锁定」和「非锁定」。刚刚创建完的锁处于非锁定状态。它有两个基本方法：`acquire(blocking=True, timeout=-1)` 和 `release()`。
+           
+           `acquire(blocking=True)` 调用，如果锁处理「非锁定」状态，将锁「锁定」，并返回 `True`；如果锁处理「锁定」状态，将阻塞直到锁被释放，然后加锁并返回 `True`。如果带有 `timeout` 参数，则最多阻塞 `timeout` 设定的秒数，超时则返回 `False`。
+
+           `acquire(blocking=False)` 调用，如果锁处理「非锁定」状态，加锁并返回 `True`，否则立即返回 `False`。
+
+           `threading` 模块有两个锁：原始锁 `Lock` 和可重入锁 `RLock`，两者的不同在于可重入锁可以被同一线程多次 `acquire`，但也要有同样次数的 `release`，才能被其他线程获取。
+
+           为确保锁被释放，可以借助 `finally` 子句：
+
+               some_lock.acquire()
+               try:
+                   # do something
+               finally:
+                   some_lock.release()
+
+           另外，锁也遵循上下文管理器协议，在进入语句块时 `acquire()` 方法被调用（这是通过让锁的 `__enter__()` 方法引用 `acquire()` 方法实现的），退出语句块时 `release()` 方法被调用（这是通过让 `__exit__()` 方法调用 `release()` 方法实现的），如下代码与上面的代码相当：
+
+               with some_lock:
+                   # do something
+           
+           不过对非阻塞锁不适用。
+
+       4. `Condition`
+
+           `Condition` 总是与锁相关联，创建 `Condition` 对象时，可以为其指定关联的锁，如果创建 `Condition` 对象时没有指定关联锁，则自动创建一个可重用锁。
+
+               import threading
+
+               condition = threading.Condition(threading.Lock())
+
+               consition_default = threading.Condition()
+
+           `Condition` 对象也有 `acquire` 方法和 `release` 方法，会对关联锁的同名方法进行调用。
+
+           另外 `Condition` 对象还有 `wait()`、`notify()`、`notify_all()` 和 `wait_for()`方法。
+
+           `wait(timeout=None)` 方法释放锁，然后阻塞当前线程，直到其他线程调用同一 `Condition` 对象的 `notify()` 方法或 `notify_all()` 方法唤醒它，或者可选的超时发生。一旦被唤醒或超时，将尝试重新获得锁，并在获得锁时返回。
+
+           `wait_for(predicate, timeout=None)` 方法的第一个参数是一个可调用对象，它的返回值应该可以转换为 `bool` 值。此方法会重复调用 `wait()` 直到条件满足或发生超时。
+
+               wait_for(predicate)
+
+           大致相当于：
+
+               while not predicate():
+                   condition.wait()
+
+           `notify()` 方法和 `notify_all()` 方法不会释放锁，需要另外调用 `release()` 方法。
+
+           `Condition` 对象遵循上下文管理器协议，在进入语句块时 `acquire()` 方法被调用，退出语句块时 `release()` 方法被调用。
+
+       5. Semaphore 对象
+
+           信号量对象用于资源个数受限的场景。
+
+           在初始化时，可以指定信号量总量。
+
+               threading.Semaphore(value=1)
+
+           调用 `acquire()` 方法时，判断计数器是否大于 `0`，如果大于 `0`，则将其减 `1` 并立即返回；如果为 `0`，则阻塞并等待其它线程调用 `release()`方法唤醒，一量被唤醒，将计数器减 `1` 并返回。
+
+           调用 `release()`方法 将内部计数器加 `1`，如果当时计数器为 `0`，在加 `1` 后唤醒正在等待的线程。
+
+           `Semaphore` 对象的 `release()`方法 和 `acquire()`方法 的调用次数可以不相等，当调用 `release()` 方法的次数多于 `acquire()` 方法的次数，计数器的值会超过初始值。
+
+           如果计数器的值超过初始值可能会引起问题，可以使用有界信号量：`BoundedSemaphore(value=maxconnections)`，当调用 `BoundedSemaphore` 对象的 `release()` 方法可能会造成计数器超过设定的最大值时，会抛出 `ValueError` 异常。
+
+           `Semaphore` 对象和 `BoundedSemaphore` 对象遵循上下文管理器协议，在进入语句块时 `acquire()` 方法被调用，退出语句块时 `release()` 方法被调用。
+    2. queue
+
+        `queue` 模块实现了多生产者、多消费者队列，可以安全的在多线程之间共享，并且自带锁机制，无需由线程实现锁。
+
+        共有三种队列：
+        1. `queue.Queue(maxsize=0)` 先进选出队列
+        2. `queue.LifoQueue(maxsize=0)` 后进选出队列（堆栈）
+        3. `queue.PriortyQueue(maxsize=0)` 排序队列：最小值最先被取出，最小值条目为 sorted(list(entries))[0]
+
+        `Queue` 有如下方法：
+
+        1. `put(item, block=True, timeout=None)`
+
+            将 `item` 放入队列。如果 `block` 为 `True`，则在 `Queue` 已满时阻塞，直到 `Queue` 有了空槽可用，或者超过 `timeout` 指定的秒数（如果给出 `timeout` 参数的话）。如果 `block` 为 `False` 则不会阻塞，在 `Queue` 已满时直接抛出 `Queue.Full` 异常。
+
+        2. `put_nowait(item)`
+
+            相当于 `put(item, False)
+
+        3. `get(block=True, timeout=None)`
+
+            从 `Queue` 中返回并移除一个 `item`。如果 `block` 为 `True`，则在 `Queue` 为空时阻塞，直到 `Queue` 中有了新进的 `item` 或超过 `timeout` 指定的秒数（如果给出 `timeout` 参数的话）。如果 `block` 为 `False` 则不会阻塞，在 `Queue` 为空时直接抛出 `Queue.Empty` 异常。
+
+        4. `get_nowait()`
+
+            相当于 `get(False)`。
+
+        5. `task_down()`
+
+            每个 `get()` 被用于获取一个任务，后续调用 `task_down()` 表示获取的任务已完成。如果使用了 `join()` 阻塞了线程，则所有 `item` 都处理完成后，将解除阻塞。
+
+        6. `join()`
+
+            阻塞至队列中所有的元素都被接收和处理完毕。
+
+            `put(item)` 未完成任务的计数就会增加，`task_down()` 未完成的任务计数会减少。当未完成计数降为 `0`，`join()` 阻塞被解除。
+
+        7. `qsize()`
+
+            返回队列的大致大小。并非可靠值，不可依赖。
+
+        8. `empty()`
+
+            队列是否为空，为空时返回 `True`。仅可参考，不可依赖。
+
+        9.  `full()`
+
+            队列是否已满，已满时返回 `True`。仅可参考，不可依赖。
+
+        `get()`方法在 `blocking` 为 `True` 时，如果队列为空，会一直阻塞，如果在队列的任务全部处理完毕后，退出主线程，并不会使被 `get()` 阻塞的线程退出。
+
+        网上有一个等待队列完成的例子：
+
+            def worker():
+                while True:
+                    item = q.get()
+                    do_work(item)
+                    q.task_done()
+
+            q = Queue()
+            for i in range(num_worker_threads):
+                t = Thread(target=worker)
+                t.start()
+
+            for item in source():
+                q.put(item)
+
+            q.join()       # block until all tasks are done
+
+        官网有一个功能相同的示例：
+
+            def worker():
+                while True:
+                    item = q.get()
+                    if item is None:
+                        break
+                    do_work(item)
+                    q.task_done()
+
+            q = queue.Queue()
+            threads = []
+            for i in range(num_worker_threads):
+                t = threading.Thread(target=worker)
+                t.start()
+                threads.append(t)
+
+            for item in source():
+                q.put(item)
+
+            # block until all tasks are done
+            q.join()
+
+            # stop workers
+            for i in range(num_worker_threads):
+                q.put(None)
+            for t in threads:
+                t.join()
+
+        可以自己尝试一下，看看结果有什么不同。
+
 2. 进程
+
+    `multiprocessing` 模块采用了和 `threading` 模板相似的 `API`，用子进程代替了线程。
+
+    1. `multiprocessing.Procee` 类
+
+        这个类的 `Api` 完全复制了 `threading.Thread` 类，只是使用子进程代替了线程，并提供了额外的几个方法和属性。
+
+        其使用方法，也与 `threading.Thread` 类似：
+
+        1. 直接使用 `threading.Thread` 方法，并传递一个可调用对象。
+        2. 继承 `threading.Thread` 类，并实现其 `run` 方法。
+
+        与 `threading.Thread` 相同的有：
+
+        1. 构造方法
+        2. `run` 方法
+        3. `start` 方法
+        4. `join` 方法
+        5. `is_alive` 方法
+        6. `name` 属性
+        7. `daemon` 属性
+
+        额外增加的方法和属性：
+
+        1. terminate()
+
+            终止进程，在类 `unix` 上使用 `SIGTERM` 信号完成，在 `Windows` 上使用 `TerminateProcess()`。此方法直接终止进程，不会执行退出处理和 `finally` 子句。
+
+            注意，进程的后代进程不会被终止，它们将变成孤立进程。且可能造成其它破坏，比如死锁。慎用！
+
+        2. kill()
+
+            与 `terminate()` 作用相同，区别仅在于，在类 `Unit` 系统上使用 `SIGKILL` 信号。慎用！
+
+        3. close()
+
+            关闭 `Proccess` 对象，释放与之关联的所有资源。
+
+        4. pid
+
+            进程ID。
+
+    2. Pool
 3. 协程
 
 ## 十五、程序打包
