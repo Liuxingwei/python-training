@@ -2310,7 +2310,73 @@ $ pip install --no-index --find-index=. -r requirements.txt
 
         8. `Barrier` 对象
 
-            
+            `Barrier` 对象用于应对固定数量的线程需要彼此相互等待的情况。线程调用 wait() 方法后将阻塞，直到所有线程都调用了 wait() 方法。此时所有线程将被同时释放。
+
+                b = Barrier(2, timeout=5)
+
+                def server():
+                    start_server()
+                    b.wait()
+                    while True:
+                        connection = accept_connection()
+                        process_server_connection(connection)
+
+                def client():
+                    b.wait()
+                    while True:
+                        connection = make_connection()
+                        process_client_connection(connection)
+
+            `Barrier` 有如下方法和特性：
+
+            1. `threading.Barrier(parties, action=None, timeout=None)`
+
+                创建一个需要 `parties` 个线程的栅栏对象。如果提供了可调用的 `action` 参数，它会在所有线程被释放时在其中一个线程中自动调用。 `timeout` 是默认的超时时间。
+
+            2. `wait(timeout=None)`
+
+                当栅栏中所有线程都已经调用了这个函数，它们将同时被释放。`timeout` 参数优先于创建栅栏对象时提供的 `timeout` 参数。
+
+                此函数返回值是一个整数，取值范围在 `0` 到 `parties - 1` 之间，每个线程中的返回值均不相同。返回值可用于从所有线程中选择唯一的一个线程执行一些特别的工作。
+
+                    i = barrier.wait()
+                    if i == 0:
+                        # Only one thread needs to print this
+                        print("passed the barrier")
+
+                如果创建栅栏对象时在构造函数中提供了 `action` 参数，它将在其中一个线程释放前被调用。如果此调用引发了异常，栅栏对象将进入损坏态。
+
+                如果发生了超时，栅栏对象将进入破损态。
+
+                如果栅栏对象进入破损态，或重置栅栏时仍有线程等待释放，将将导致所有已经调用和未来调用的 `wait()` 方法引发 `BrokenBarrierError` 异常。
+
+            3. `reset()`
+
+                重置栅栏为默认的初始态。如果栅栏中仍有线程等待释放，这些线程将会收到 `BrokenBarrierError` 异常。
+
+                注意使用此函数时，如果有某些线程状态未知，则可能需其它的同步来确保线程已被释放。如果栅栏进入了破损态，最好废弃它并新建一个栅栏。
+
+            4. `abort()`
+
+                使栅栏进入破损态。这将导致所有已经调用和未来调用的 `wait() `方法中引发 `BrokenBarrierError` 异常。使用这个方法的一种情况是需要中止程序以避免死锁。
+
+                更好的方式是：创建栅栏时提供一个合理的超时时间，来自动避免某个线程出错。
+
+            5. `parties`
+
+                线程数量。
+
+            6. `n_waiting`
+
+                当前时刻正在栅栏中阻塞的线程数量。
+
+            7. `broken`
+
+                一个布尔值，值为 True 表明栅栏为破损态。
+
+            `exception threading.BrokenBarrierError`
+
+            异常类，是 `RuntimeError` 异常的子类，在 `Barrier` 对象重置时仍有线程阻塞时和对象进入破损态时被引发。
     2. queue
 
         `queue` 模块实现了多生产者、多消费者队列，可以安全的在多线程之间共享，并且自带锁机制，无需由线程实现锁。
