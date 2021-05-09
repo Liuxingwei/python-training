@@ -976,6 +976,40 @@ $ pip install --no-index --find-index=. -r requirements.txt
 
             `sorted(seq, key=None)` 函数返回一个排序后的新序列，如果指定了 `key`，则对每个元素调用 `key` 函数，并对结果进行排序。
 
+        6. `all(iterable)`
+
+            可迭代参数的所有元素均为真时返回 `True`。
+
+        7. `any(iterable)`
+
+            可迭代参数的任一元素为真时返回 `True`。
+
+        8. `map(function, iterable, ...)`
+
+            返回一个将 `function` 应用于 `iterable` 中每一项并输出其结果的迭代器。 如果传入了额外的 `iterable` 参数，`function` 必须接受相同个数的实参并被应用于从所有可迭代对象中并行获取的项。 当有多个可迭代对象时，最短的可迭代对象耗尽则整个迭代就将结束。 对于函数的输入已经是参数元组的情况，请使用 `itertools.starmap(function, itertools)`。
+
+        9.  `max(iterable, key=None, default=None)`、`max(arg1, arg2[[, *args], default=None])`
+
+            如果只提供了一个位置参数，它必须是非空 `iterable`，返回可迭代对象中最大的元素；如果提供了两个及以上的位置参数，则返回最大的位置参数。
+
+            有两个可选只能用关键字的实参。`key` 实参必须是可调用的对象（比如函数或函子），按使用迭代元素（或多个位置参数）作为参数调用 `key` 函数的结果排序。`default` 实参是当可迭代对象为空时返回的值。如果可迭代对象为空，并且没有给 `default` ，则会触发 `ValueError`。
+
+        10. `min(iterable, key=None, default=None)`、`min(arg1, arg2[[, *args], default=None])`
+
+            除了返回的是最小值外，与 `max` 函数相同。
+
+        11. `next(iterable)`
+
+            通过调用 `iterator` 的 `__next__()` 方法获取下一个元素。如果迭代器耗尽，则返回给定的 `default`，如果没有默认值则触发 `StopIteration`。
+
+        12. `sum(iterable, start=0)`
+
+            自左向右对 `iterable` 的项求和并返回总计值。 iterable 的项通常为数字，而 start 值则不允许为字符串。
+
+        13. `itertools` 模块
+
+            `itertools` 模块提供了许多用于迭代的工具函数。
+
 5. 简单推导
 
     1. 列表推导：
@@ -1003,11 +1037,11 @@ $ pip install --no-index --find-index=. -r requirements.txt
 
     2. 集合推导：
 
-        {valueexpression for val1, val2... in iterable if condition}
+            {valueexpression for val1, val2... in iterable if condition}
 
     3. 字典推导：
 
-        {keyexpression:valueexpression for val1, val2... in iterable if condition}
+            {keyexpression:valueexpression for val1, val2... in iterable if condition}
 
 6. 异常
 
@@ -2083,6 +2117,12 @@ $ pip install --no-index --find-index=. -r requirements.txt
         >>> generator.send(None)
 
     需要注意的是，仅当生成器被挂起后，传递值才有意义，否则会报错，因此第一次迭代生成器，需要作用 `next` 函数或调用参数为 `None` 的 `send`方法。
+
+3. 生成器推导
+
+    如果使用推导式时，使用圆括号：
+
+        (valueexpression for val1, val2... in iterable if condition)
 ## 十一、模块和包
 
 1. 模块
@@ -2308,7 +2348,7 @@ $ pip install --no-index --find-index=. -r requirements.txt
                 ... t = Timer(30.0, hello)
                 ... t.start()
 
-        8. `Barrier` 对象
+        8. `Barrier`(栅栏) 对象
 
             `Barrier` 对象用于应对固定数量的线程需要彼此相互等待的情况。线程调用 wait() 方法后将阻塞，直到所有线程都调用了 wait() 方法。此时所有线程将被同时释放。
 
@@ -2377,6 +2417,7 @@ $ pip install --no-index --find-index=. -r requirements.txt
             `exception threading.BrokenBarrierError`
 
             异常类，是 `RuntimeError` 异常的子类，在 `Barrier` 对象重置时仍有线程阻塞时和对象进入破损态时被引发。
+
     2. queue
 
         `queue` 模块实现了多生产者、多消费者队列，可以安全的在多线程之间共享，并且自带锁机制，无需由线程实现锁。
@@ -2520,7 +2561,135 @@ $ pip install --no-index --find-index=. -r requirements.txt
 
             进程ID。
 
-    2. Pool
+    2. `multiprocessing.Queue` 和 `multiprocessing.JoinableQueue`
+
+        除了 `task_down()` 方法和 `join()` 方法之外， `multiprocessing.Queue` 实现了 `queue.Queue` 的所有方法。
+
+        `multiprocessing.JoinableQueue` 是 `multiprocessing.Queue` 的子类，额外添加了 `task_down()` 方法和 `join()` 方法。
+
+        这两个类是进程和线程安全的。
+
+    3. `Pipe` 和 `Connection`
+
+        `Pipe` 用于在**两个进程**间传递消息。创建 `Pipe` 后，会返回两个 `Connection` 对象，分别表示 `Pipe` 的两端，需要使用这两全 `Connection` 对象操作 `Pipe`。
+
+        如下代码演示了子进程向 `Pipe` 写入数据，父进程从 `Pipe` 读取数据的场景：
+
+            from multiprocessing import Process, Pipe
+
+            def f(conn):
+                conn.send([42, None, 'hello'])
+                conn.close()
+
+            if __name__ == '__main__':
+                parent_conn, child_conn = Pipe()
+                p = Process(target=f, args=(child_conn,))
+                p.start()
+                print(parent_conn.recv())   # prints "[42, None, 'hello']"
+                p.join()
+
+        `Connection` 对象的 `recv()` 方法会阻塞，直到可以从 `Pipe` 中获取数据。
+
+        `Connection` 对象的 `send(obj)` 方法向 `Pipe` 写入数据。
+
+        `Coonection` 对象的 `close()` 方法关闭 `Pipe`。
+
+        如是两个进程同时在 `Pipe` 的同一端写入或读取 `Pipe` 将引发异常。
+
+        `Pipe(duplex=True)` 默认创建一个双工 `Pipe` 对象（即两端均可写入和读取），如果参数为 `False`，则返回的两个 `Connection` 对象中，前一个仅允许写入，后一个仅允许读出。
+
+    4. 进程同步
+
+        `multiprocessing` 模块实现了自己的 `Lock`、`Condition`、`Event`、`Semaphore`、`BoundedSemaphore`、`Barrier` 类，这些类的 `API` 与 `threading` 模块的同名类相同。
+
+    5. `Pool`
+
+        `Pool` 类可以创建进程池，并通过 `Pool` 对象方法为进程分派任务。
+
+        `Pool` 对象支持上下文管理器协议，`__enter__()` 返回进程池对象, `__exit__()` 会调用 terminate() 。
+
+        1. `multiprocessing.pool.Pool(processes=None, initializer=None, initargs=None)`
+
+            创建一个进程池对象。`Processes` 用于指定进程的数量，如果为 `None`，将使用 `os.cpu_count()` 返回的值（即系统的 `CPU` 数量）。
+
+            如果 `initializer` 不为 `None`，则每个工作进程将会在启动时调用 `initializer(*initargs)`。
+
+        2. `apply(func, args=(), kwds={})`
+
+            使用 `args` 参数以及 `kwds` 命名参数调用 `func` , 它在返回结果前阻塞。`func` 只会在一个进程池中的一个工作进程中执行。
+
+        3. `apply_async(func, args=(), kwds={}, callback=None, error_callback=None)`
+
+            此方法使用 `args` 参数以及 `kwds` 命名参数调用 `func` ，返回一个 `AsyncResult` 对象。
+
+            `AsyncResult` 对象的 `get(timeout=None)` 方法会阻塞，直到 `func` 执行完并获取返回结果，或者超时。
+
+            `AsyncResult` 对象的 `wait(timeout=None)` 方法会阻塞，直到 `func` 执行完返回结果，或者超时。
+
+            `AsyncResult` 对象的 `ready()` 方法立即返回 `func` 的执行状态，`successful()` 方法判断是否已经完成并且未引发异常，如果还未获得结果将引发  `ValueError` 异常。
+
+            如果指定了 `callback`, 它必须是一个接受单个参数的可调用对象。当执行成功时， `callback` 会被用于处理执行后的返回结果。
+
+            如果指定了 `error_callback`, 它必须是一个接受单个参数的可调用对象。当目标函数执行失败时， 会将抛出的异常对象作为参数传递给 `error_callback` 执行。
+
+        4. `map(func, iterable, chunksize=1)`
+
+            内置 `map()` 函数的并行版本，它会保持阻塞直到获得结果。
+
+            这个方法会将可迭代对象分割为许多块，然后提交给进程池。可以将 `chunksize` 设置为一个正整数从而（近似）指定每个块的大小可以。
+
+            注意对于很长的迭代对象，可能消耗很多内存。可以考虑使用 `imap()` 或 `imap_unordered()` 并且显式指定 `chunksize` 以提升效率。
+
+        5. `map_async(func, iterable[, chunksize[, callback[, error_callback]]])`
+
+            `map()` 方法的一个变种，返回一个 `AsyncResult` 对象。
+
+        6. `imap(func, iterable, chunksize=1)`
+
+            `map()` 的延迟执行版本。与 `map()` 的不同是， `map()` 是将所有调用的结果组合成一个队列返回，而 `imap()` 返回的是一个迭代器，这个迭代器每次返回一个函数调用结果。
+
+            对于很长的迭代器，给 `chunksize` 设置一个很大的值会比默认值 `1` 极大 地加快执行速度。
+
+        7. `imap_unordered(func, iterable, chunksize=1)`
+
+            和 `imap()` 相同，只不过通过迭代器返回的结果是任意的。
+
+        8. `starmap(func, iterable, chunksize=1)`
+
+            和 `map()` 类似，不过 `iterable` 中的每一项会被解包再作为函数参数。
+
+            比如可迭代对象 `[(1,2), (3, 4)]` 会转化为等价于 `[func(1,2), func(3,4)]` 的调用。
+
+        9. `starmap_async(func, iterable, chunksize=1)`
+
+            相当于 `starmap()` 与 `map_async()` 的结合，迭代 `iterable` 的每一项，解包作为 `func` 的参数并执行，返回用于获取结果的 `AsyncResult` 对象。
+
+        10. `close()`
+
+            阻止后续任务提交到进程池，当所有任务执行完成后，工作进程会退出。
+
+        11. `terminate()`
+
+            不必等待未完成的任务，立即停止工作进程。当进程池对象被垃圾回收时，会立即调用 `terminate()`。
+
+        12. `join()`
+
+            等待工作进程结束。调用 `join()` 前必须先调用 `close()` 或者 `terminate()`。
+
+    6. 日志
+
+        `multiprocessing.get_logger()` 返回 `multiprocessing` 使用的 `logger`，必要的话会创建一个新的。
+
+        `multiprocessing.log_to_stderr()` 调用 `get_logger()`, 并在返回的 `logger` 上增加一个 `handler`，将所有输出都使用 `'[%(levelname)s/%(processName)s] %(message)s'` 的格式发送到 `sys.stderr`。
+
+    7. 共享内存
+
+        暂略。
+
+    8. 服务进程
+
+        暂略。
+
 3. 协程
 
 ## 十五、程序打包
