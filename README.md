@@ -984,7 +984,7 @@ $ pip install --no-index --find-index=. -r requirements.txt
 
             可迭代参数的任一元素为真时返回 `True`。
 
-        8. `map(function, iterable, ...)`
+        8. `map(function, *iterable)`
 
             返回一个将 `function` 应用于 `iterable` 中每一项并输出其结果的迭代器。 如果传入了额外的 `iterable` 参数，`function` 必须接受相同个数的实参并被应用于从所有可迭代对象中并行获取的项。 当有多个可迭代对象时，最短的可迭代对象耗尽则整个迭代就将结束。 对于函数的输入已经是参数元组的情况，请使用 `itertools.starmap(function, itertools)`。
 
@@ -2690,7 +2690,82 @@ $ pip install --no-index --find-index=. -r requirements.txt
 
         暂略。
 
-3. 协程
+3. `concurrent.future` 模块
+
+    `concurrent.future` 模块提供异步执行可调用对象高层接口。
+
+    1. `Future` 对象
+
+        `Future` 类将可调用对象封装为异步执行。`Future` 实例由 `Executor.submit()` 创建。
+
+        1. `result(timeout=Npne)` 方法
+
+            返回调用返回的值。如果调用还没完成那么这个方法将等待 `timeout` 秒。如果在 `timeout` 秒内没有执行完成，`concurrent.futures.TimeoutError` 将会被触发。
+
+            如果 `futrue` 在完成前被取消则 `CancelledError` 将被触发。
+
+            如果调用引发了一个异常，这个方法也会引发同样的异常。
+
+        2. `cancel()` 方法
+
+            尝试取消调用。 如果调用正在执行或已结束运行不能被取消则该方法将返回 `False`，否则调用会被取消并且该方法将返回 `True`。
+
+        3. `add_done_callback(fn)` 方法
+
+            附加可调用 `fn` 到 `future` 对象。当 `future` 对象被取消或完成运行时，将会调用 `fn`，`future` 对象将作为 `fn` 的唯一参数。
+
+        4. `running()` 方法
+
+            如果调用正在执行而且不能被取消那么返回 `True`。
+
+        5. `cancelled()` 方法
+
+            如果调用成功取消返回 `True`。
+
+        6. `done()` 方法
+
+            如果调用已被取消或正常结束那么返回 `True`。
+
+    2. `Excuter` 对象
+
+       1. `submit(fn, *args, **kwargs)` 方法
+
+            将 `fn(*args, **kwargs)` 函数封装为异步执行对象 `Future`，并返回封装后的 `Future` 对象。
+
+       2. `map(func, *iterables, timeout)` 方法
+
+            类似于 `map(func, *iterables)` 函数，不过  `func` 是异步执行的。此方法返回一个迭代器，每迭代一次得到一个异步执行的结果。
+
+       3. `shutdown(wait=True)` 方法
+
+            当待执行的 `future` 对象完成执行后向执行者发送信号，它就会释放正在使用的任何资源。
+
+            `Excuter` 对象支持上下文管理器协议，在退出语句块时，会自动执行 `shutdown(True)`。
+
+    3. `ThreadPoolExcuter` 对象
+
+        `Excuter` 的线程池实现。
+
+        `class concurrent.futures.ThreadPoolExecutor(max_workers=None, thread_name_prefix='')`
+
+        使用最多 `max_workers` 个线程的线程池来异步执行调用。`max_workers` 的默认值 `min(32, os.cpu_count() + 4)`。 这个默认值会保留至少 `5` 个工作线程用于 `I/O` 密集型任务。 对于那些释放了 `GIL` 的 `CPU` 密集型任务，它最多会使用 `32` 个 `CPU` 核心。这样能够避免在多核机器上不知不觉地使用大量资源。
+
+        `thread_name_prefix` 参数允许用户控制由线程池创建的 `threading.Thread` 工作线程名称以方便调试。
+
+            with ThreadPoolExecutor(max_workers=1) as executor:
+                future = executor.submit(pow, 323, 1235)
+                print(future.result())
+
+    4. `ProcessPoolExcuter` 对象
+
+        `Excuter` 的进程池实现。
+
+        `class concurrent.futures.ProcessPoolExecutor(max_workers=None)`
+
+        使用最多具有 `max_workers` 个进程的进程池。 如果 `max_workers` 为 `None` 或未给出，它将默认为机器的处理器个数。
+
+4. 协程
+
 
 ## 十五、程序打包
 
