@@ -1,44 +1,15 @@
-import threading
+from multiprocessing import Pool, TimeoutError
 import time
+import os
 
-lock = threading.Lock()
-class myThread (threading.Thread):
-    def __init__(self, threadID, name, other = None):
-        threading.Thread.__init__(self)
-        self.threadID = threadID
-        self.name = name
-        self.other = other
-    def run(self):
-        print ("开始线程：" + self.name)
-        l = lock.acquire(False)
-        print(l)
-        if l:
-            if self.other is not None:
-                self.other.start()
-                self.other.join()
-            lock.release()
-        print ("退出线程：" + self.name)
+def f(x):
+    return os.getpid(), x*x
 
-def print_time(thread, delay, counter):
-    while counter:
-        time.sleep(delay)
-        print ("%s: %s" % (thread.name, time.ctime(time.time())))
-        counter -= 1
+if __name__ == '__main__':
+    # start 4 worker processes
+    with Pool(processes=8) as pool:
 
-thread1 = myThread(1, "Thread-1")
-thread2 = myThread(2, "Thread-2", thread1)
-thread2.start()
-thread2.join()
+        # print "[0, 1, 4,..., 81]"
+        print(pool.map(f, range(100)))
 
-import threading
-se = threading.BoundedSemaphore(2)
-se.acquire()
-se.acquire()
-se.release()
-se.release()
-se.release()
-se.release()
-se.acquire()
-se.acquire()
-se.acquire()
-se.acquire()
+        print(pool.imap(f, range(10)))
